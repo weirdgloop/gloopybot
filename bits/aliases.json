@@ -1,7 +1,34 @@
 {
-	"rs3": "r",
-	"osrs": "o",
-	"2007": "o",
-	"os": "o",
-	"meta": "m"
+	"rs3": {
+		"wiki": "r",
+		"setOnly": false
+	},
+	"rs": {
+		"wiki": "r",
+		"setOnly": true
+	},
+	"runescape": {
+		"wiki": "r",
+		"setOnly": true
+	},
+	"osrs": {
+		"wiki": "o",
+		"setOnly": false
+	},
+	"2007": {
+		"wiki": "o",
+		"setOnly": false
+	},
+	"os": {
+		"wiki": "o",
+		"setOnly": false
+	},
+	"oldschool": {
+		"wiki": "o",
+		"setOnly": true
+	},
+	"meta": {
+		"wiki": "m",
+		"setOnly": false
+	}
 }

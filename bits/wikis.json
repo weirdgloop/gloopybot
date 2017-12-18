@@ -1,5 +1,14 @@
 {
-	"r": "https://rstest.weirdgloop.org",
-	"o": "https://osrstest.weirdgloop.org",
-	"m": "https://meta.weirdgloop.org"
+	"r": {
+		"url": "https://rstest.weirdgloop.org",
+		"longname": "RuneScape"
+	},
+	"o": {
+		"url": "https://osrstest.weirdgloop.org",
+		"longname": "OldSchool RuneScape"
+	},
+	"m": {
+		"url": "https://meta.weirdgloop.org",
+		"longname": "Meta"
+	}
 }
