@@ -12,11 +12,11 @@ sql.open('./bits/db.sqlite');
 
 bot.once('ready', () => {
 	bot.guilds.forEach(guild => {
-		sql.get('SELECT * FROM guild WHERE id=?', guild.id).then(row => {
+		sql.get('SELECT * FROM guilds WHERE id=?', guild.id).then(row => {
 			if (!row) {
 				sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
 			}
-		}).catch(() => {
+		}).catch(err => {
 			sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
 				return sql.run('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT)');
 			}).then(() => {
@@ -63,7 +63,7 @@ bot.on('message', msg => {
 });
 
 const authorIsServerAdmin = msg => {
-	return msg.member.hasPermission('MANAGE_GUILD');
+	return msg.member.hasPermission('ADMINISTRATOR');
 };
 
 const authorIsBotCreator = msg => {
@@ -76,30 +76,30 @@ const authorIsAnyAdmin = msg => {
 
 const parseLinks = msg => {
 	let objArr = [];
-	if (/\[\[([^|]*?)\]\]/g.test(msg.cleanContent)) {
-		let queries = msg.cleanContent.match(/\[\[([^|]*?)\]\]/g);
+	if (/\[\[(.*?)(?:\|.*?)?\]\]/g.test(msg.cleanContent)) {
+		let queries = msg.cleanContent.match(/\[\[(.*?)(?:\|.*?)?\]\]/g);
 		for (let i = 0; i < queries.length; i++) {
-			let query = queries[i].replace(/[[\]]{2}/g, '');
+			let query = queries[i].replace(/\[\[(.*?)(?:\|.*?)?\]\]/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
 			objArr.push({ 'type': 'search', 'query': query, 'wiki': wiki, 'id': msg.channel.id + '@' + msg.guild.id });
 		}
 	}
 
-	if (/{{([^|]*?)}}/g.test(msg.cleanContent)) {
-		let queries = msg.cleanContent.match(/{{([^|]*?)}}/g);
+	if (/{{(.*?)(?:\|.*?)?}}/g.test(msg.cleanContent)) {
+		let queries = msg.cleanContent.match(/{{(.*?)(?:\|.*?)?}}/g);
 		for (let i = 0; i < queries.length; i++) {
-			let query = queries[i].replace(/[{}]{2}/g, '');
+			let query = queries[i].replace(/{{(.*?)(?:\|.*?)?}}/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
 			objArr.push({ 'type': 'template', 'query': query, 'wiki': wiki, 'id': msg.channel.id + '@' + msg.guild.id });
 		}
 	}
 
-	if (/--([^|]*?)--/g.test(msg.cleanContent)) {
-		let queries = msg.cleanContent.match(/--([^|]*?)--/g);
+	if (/--(.*?)(?:\|.*?)?--/g.test(msg.cleanContent)) {
+		let queries = msg.cleanContent.match(/--(.*?)(?:\|.*?)?--/g);
 		for (let i = 0; i < queries.length; i++) {
-			let query = queries[i].replace(/-{2}/g, '');
+			let query = queries[i].replace(/--(.*?)(?:\|.*?)?--/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
 			objArr.push({ 'type': 'raw', 'query': query, 'wiki': wiki, 'id': msg.channel.id + '@' + msg.guild.id });
@@ -200,5 +200,22 @@ const requestLink = (query, wiki, type, changuildID) => {
 		});
 	});
 };
+
+//String.prototype.padStart polyfill
+if (!String.prototype.padStart) {
+	String.prototype.padStart = function padStart(targetLength, padString) {
+		targetLength = targetLength >> 0; //floor if number or convert non-number to 0;
+		padString = String(padString || ' ');
+		if (this.length > targetLength) {
+			return String(this);
+		} else {
+			targetLength = targetLength - this.length;
+			if (targetLength > padString.length) {
+				padString += padString.repeat(targetLength / padString.length); //append to original to ensure we are longer than needed
+			}
+			return padString.slice(0, targetLength) + String(this);
+		}
+	};
+}
 
 bot.login(config.token);
