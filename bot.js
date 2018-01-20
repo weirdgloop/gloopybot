@@ -33,6 +33,7 @@ const reallyReady = () => {
 };
 
 bot.on('message', msg => {
+	if (msg.author.bot) return;
 	if (msg.cleanContent.startsWith(config.prefix)) {
 		let cmd = msg.cleanContent.split(' ')[0].substring(config.prefix.length);
 		let args = msg.cleanContent.split(' ').slice(1);
@@ -63,6 +64,7 @@ bot.on('message', msg => {
 });
 
 const authorIsServerAdmin = msg => {
+	if (msg.guild.id == config.testServer) return true;
 	return msg.member.hasPermission('ADMINISTRATOR');
 };
 
@@ -76,8 +78,12 @@ const authorIsAnyAdmin = msg => {
 
 const parseLinks = msg => {
 	let objArr = [];
-	if (/\[\[(.*?)(?:\|.*?)?\]\]/g.test(msg.cleanContent)) {
-		let queries = msg.cleanContent.match(/\[\[(.*?)(?:\|.*?)?\]\]/g);
+	const removeCodeBlocks = msg.cleanContent.replace(/`{3}[\S\s]*?`{3}/gm, '');
+	const removeInlineCode = removeCodeBlocks.replace(/`[\S\s]*?`/gm, '');
+	const removeLinks = removeInlineCode.replace(/(https?:\/\/[\w./#?&_-]*)/gm, '');
+
+	if (/\[\[(.*?)(?:\|.*?)?\]\]/g.test(removeLinks)) {
+		let queries = removeLinks.match(/\[\[(.*?)(?:\|.*?)?\]\]/g);
 		for (let i = 0; i < queries.length; i++) {
 			let query = queries[i].replace(/\[\[(.*?)(?:\|.*?)?\]\]/g, '$1');
 			let wiki = parseWikiFromQuery(query);
@@ -86,8 +92,8 @@ const parseLinks = msg => {
 		}
 	}
 
-	if (/{{(.*?)(?:\|.*?)?}}/g.test(msg.cleanContent)) {
-		let queries = msg.cleanContent.match(/{{(.*?)(?:\|.*?)?}}/g);
+	if (/{{(.*?)(?:\|.*?)?}}/g.test(removeLinks)) {
+		let queries = removeLinks.match(/{{(.*?)(?:\|.*?)?}}/g);
 		for (let i = 0; i < queries.length; i++) {
 			let query = queries[i].replace(/{{(.*?)(?:\|.*?)?}}/g, '$1');
 			let wiki = parseWikiFromQuery(query);
@@ -96,8 +102,8 @@ const parseLinks = msg => {
 		}
 	}
 
-	if (/--(.*?)(?:\|.*?)?--/g.test(msg.cleanContent)) {
-		let queries = msg.cleanContent.match(/--(.*?)(?:\|.*?)?--/g);
+	if (/--(.*?)(?:\|.*?)?--/g.test(removeLinks)) {
+		let queries = removeLinks.match(/--(.*?)(?:\|.*?)?--/g);
 		for (let i = 0; i < queries.length; i++) {
 			let query = queries[i].replace(/--(.*?)(?:\|.*?)?--/g, '$1');
 			let wiki = parseWikiFromQuery(query);
@@ -111,7 +117,9 @@ const parseLinks = msg => {
 			msg.channel.send(replString);
 		}).catch(err => {
 			if (err === 'NVL') {
-				//No valid links found (all 404s) - noop
+				msg.channel.send('**No search results found for the attempted link(s).** Try using dashes instead to force-create a URL.');
+			} else if (err === 'NDW') {
+				msg.reply(`this server has no default wiki set. Please set one or have a server administrator set one using \`${config.prefix}wiki.\``);
 			} else {
 				console.error(err);
 			}
@@ -151,6 +159,10 @@ const buildMessage = objectArray => {
 			}
 			if (replyString.length > 0) return resolve(replyStringBegin + replyString);
 			else return reject('NVL');
+		}).catch(err => {
+			if (err === 'NDW') {
+				return reject('NDW');
+			}
 		});
 	});
 };
@@ -196,6 +208,10 @@ const requestLink = (query, wiki, type, changuildID) => {
 			} else {
 				let url = `${wurl}/w/${query.replace(/ /g, '_')}`;
 				return resolve([ query, [ query ], [ '' ], [ url ] ]);
+			}
+		}).catch(err => {
+			if (err === 'NDW') {
+				return reject('NDW');
 			}
 		});
 	});

@@ -26,7 +26,7 @@ const commands = {
 					msg.reply(`the wiki of guild **${msg.guild.name}** is now set to **${wikis[walias[wiki].wiki].longname}**.`);
 				});
 			} else {
-				msg.reply('bad!');
+				invalidReply(bot, msg, true);
 			}
 		}
 	},
@@ -67,7 +67,7 @@ const commands = {
 					msg.reply(`the wiki of channel **${msg.channel.name}** is now set to **${wikis[walias[wiki].wiki].longname}**.`);
 				});
 			} else {
-				msg.reply('bad!');
+				invalidReply(bot, msg, true);
 			}
 		}
 	},
@@ -106,7 +106,49 @@ const commands = {
 				});
 			});
 		}
+	},
+	'restart': {
+		level: 2,
+		process: (bot, msg) => {
+			msg.reply('restarting bot!');
+			setTimeout(() => process.exit(1), 500);
+		}
+	},
+	'help': {
+		level: 0,
+		process: (bot, msg) => {
+			msg.reply('for help and documentation: http://thepsionic.com/bots/gloopybot');
+		}
+	},
+	'list': {
+		level: 0,
+		process: (bot, msg) => {
+			invalidReply(bot, msg, false);
+		}
 	}
+};
+
+const invalidReply = (bot, msg, isNotList) => {
+	let replyString = 'here is a list of wikis you can set:';
+	if (isNotList) replyString = 'that\'s not a wiki I know of. Here\'s a list of wikis you can set:';
+	for (let wiki in wikis) {
+		if (!wikis.hasOwnProperty(wiki)) continue;
+
+		replyString += '\n' + wikis[wiki].longname + ': ' + wiki;
+		for (let alias in walias) {
+			if (!walias.hasOwnProperty(alias)) continue;
+
+			if (walias[alias].wiki == wiki) {
+				replyString += ', ' + alias;
+				if (walias[alias].setOnly) {
+					replyString += '※';
+				}
+			}
+		}
+	}
+	replyString += '\n*Aliases denoted with ※ can only be used to set the wiki, not for one-time overrides.*';
+	replyString += '\n*The full name (in front of the colon) can not be used for either purpose and only serves as label.*';
+	msg.reply(replyString);
 };
 
 module.exports.commands = commands;
