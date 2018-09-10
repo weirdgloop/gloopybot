@@ -1,10 +1,10 @@
 {
 	"r": {
-		"url": "https://rstest.weirdgloop.org",
+		"url": "https://rs.weirdgloop.org",
 		"longname": "RuneScape"
 	},
 	"o": {
-		"url": "https://osrstest.weirdgloop.org",
+		"url": "https://osrs.weirdgloop.org",
 		"longname": "OldSchool RuneScape"
 	},
 	"m": {
