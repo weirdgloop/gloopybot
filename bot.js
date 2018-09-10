@@ -195,7 +195,6 @@ const getWiki = (objWiki, changuildID) => {
 };
 
 const requestLink = (query, wiki, type, changuildID) => {
-	console.log(`Query: ${query}. Wiki: ${wiki}`);
 	return new Promise((resolve, reject) => {
 		getWiki(wiki, changuildID).then(wurl => {
 			if (type === 'template') {
