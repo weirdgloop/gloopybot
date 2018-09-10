@@ -3,6 +3,10 @@
 		"wiki": "r",
 		"setOnly": false
 	},
+	"rsw": {
+		"wiki": "r",
+		"setOnly": false
+	},
 	"rs": {
 		"wiki": "r",
 		"setOnly": true
@@ -12,6 +16,14 @@
 		"setOnly": true
 	},
 	"osrs": {
+		"wiki": "o",
+		"setOnly": false
+	},
+	"osw": {
+		"wiki": "o",
+		"setOnly": false
+	},
+	"osrsw": {
 		"wiki": "o",
 		"setOnly": false
 	},
