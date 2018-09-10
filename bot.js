@@ -140,7 +140,7 @@ const parseWikiFromQuery = query => {
 			return potWiki;
 		} else {
 			if (aliases.hasOwnProperty(potWiki) && !aliases[potWiki].setOnly) {
-				return aliases[potWiki.wiki];
+				return aliases[potWiki].wiki;
 			} else {
 				return 'default';
 			}
@@ -195,6 +195,7 @@ const getWiki = (objWiki, changuildID) => {
 };
 
 const requestLink = (query, wiki, type, changuildID) => {
+	console.log(`Query: ${query}. Wiki: ${wiki}`);
 	return new Promise((resolve, reject) => {
 		getWiki(wiki, changuildID).then(wurl => {
 			if (type === 'template') {
