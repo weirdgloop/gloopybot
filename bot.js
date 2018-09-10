@@ -22,7 +22,7 @@ bot.once('ready', () => {
 			if (!row) {
 				sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
 			}
-		}).catch(err => {
+		}).catch(() => {
 			sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
 				return sql.run('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT)');
 			}).then(() => {
