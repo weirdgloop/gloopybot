@@ -34,7 +34,7 @@ bot.once('ready', () => {
 });
 
 const reallyReady = () => {
-	bot.user.setGame(`with gloop | ${config.prefix}help`);
+	bot.user.setActivity(`with gloop | ${config.prefix}help`);
 	console.log(`Ready: serving ${bot.guilds.size} guilds, in ${bot.channels.size} channels, for ${bot.users.size} users.`);
 };
 
