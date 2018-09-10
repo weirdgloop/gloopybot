@@ -10,6 +10,12 @@ const commands = require('./bits/commands.js');
 const sql = require('sqlite');
 sql.open('./bits/db.sqlite');
 
+const pj = require('./package.json');
+
+needle.defaults({
+	user_agent: `GloopyBot/${pj.version}`
+});
+
 bot.once('ready', () => {
 	bot.guilds.forEach(guild => {
 		sql.get('SELECT * FROM guilds WHERE id=?', guild.id).then(row => {
