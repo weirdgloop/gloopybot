@@ -3,6 +3,7 @@ sql.open('./bits/db.sqlite');
 
 const wikis = require('./wikis.json');
 const walias = require('./aliases.json');
+const config = require('./config.json');
 
 const aliases = {
 	//TBI
@@ -15,6 +16,8 @@ const commands = {
 	//2 - Bot creator
 	'wiki': {
 		level: 1,
+		help_desc: 'set the wiki of the entire server',
+		help_subcmds: '',
 		process: (bot, msg, args) => {
 			let wiki = args[0];
 			if (Object.keys(wikis).includes(wiki)) {
@@ -32,6 +35,8 @@ const commands = {
 	},
 	'override': {
 		level: 1,
+		help_desc: 'set the wiki override for the current channel',
+		help_subcmds: '',
 		process: (bot, msg, args) => {
 			let wiki = args[0];
 			if (Object.keys(wikis).includes(wiki)) {
@@ -73,6 +78,8 @@ const commands = {
 	},
 	'config': {
 		level: 0,
+		help_desc: 'shows the bot setup for the current server',
+		help_subcmds: '',
 		process: (bot, msg) => {
 			sql.get('SELECT * FROM guilds WHERE id=?', msg.guild.id).then(grow => {
 				let configString = `\`\`\`md\n# Information for server ${msg.guild.name}`;
@@ -116,12 +123,44 @@ const commands = {
 	},
 	'help': {
 		level: 0,
+		help_desc: 'shows this message',
+		help_subcmds: '',
 		process: (bot, msg) => {
-			msg.reply('for help and documentation: http://thepsionic.com/bots/gloopybot');
+			let header = '```md\n# COMMAND LIST\n';
+			let footer = '\n# Linking syntax\n* < [[term]] > uses the API to search for the page\n* < {{term}} > uses the API to search for the template\n* < --term-- > links to the page no matter' +
+					 ' what, which means the page may not exist.\n\n# One-time overrides\n* You can use the name of the wiki before a link to apply it to a different wiki than the' +
+					 ' default one for the channel.\n* For example, in a channel where the default is the RS3 wiki, <[[osrs:Bucket]]> links to the OSRS version of the page.\n```';
+			let cmdlist = '';
+			let longest = -1;
+			for (let i = 0; i < Object.getOwnPropertyNames(commands).length; i++) {
+				let item = Object.getOwnPropertyNames(commands)[i];
+				if (!commands.hasOwnProperty(item) || !commands[item].hasOwnProperty('help_desc') || commands[item].help_desc == false) {
+					continue;
+				}
+				
+				let compareString = config.prefix + item;
+				if (longest < compareString.length) longest = compareString.length;
+			}
+
+			for (let i = 0; i < Object.getOwnPropertyNames(commands).length; i++) {
+				let item = Object.getOwnPropertyNames(commands)[i];
+				if (!commands.hasOwnProperty(item) || !commands[item].hasOwnProperty('help_desc') || commands[item].help_desc == false) {
+					continue;
+				}
+
+				cmdlist += `<${(config.prefix + item).padEnd(longest)} ${commands[item].help_desc}>\n`;
+				if (commands[item].help_subcmds) {
+					cmdlist += `  * Subcommands: ${commands[item].help_subcmds}\n`;
+				}
+			}
+
+			msg.channel.send(header + cmdlist + footer);
 		}
 	},
 	'list': {
 		level: 0,
+		help_desc: 'shows all available wikis',
+		help_subcmds: '',
 		process: (bot, msg) => {
 			invalidReply(bot, msg, false);
 		}
