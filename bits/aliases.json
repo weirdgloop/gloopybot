@@ -27,10 +27,6 @@
 		"wiki": "o",
 		"setOnly": false
 	},
-	"2007": {
-		"wiki": "o",
-		"setOnly": false
-	},
 	"os": {
 		"wiki": "o",
 		"setOnly": false
@@ -39,7 +35,27 @@
 		"wiki": "o",
 		"setOnly": true
 	},
+	"2007": {
+		"wiki": "o",
+		"setOnly": false
+	},
+	"2007scape": {
+		"wiki": "o",
+		"setOnly": false
+	},
 	"meta": {
+		"wiki": "m",
+		"setOnly": false
+	},
+	"g": {
+		"wiki": "m",
+		"setOnly": false
+	},
+	"gloop": {
+		"wiki": "m",
+		"setOnly": false
+	},
+	"weirdgloop": {
 		"wiki": "m",
 		"setOnly": false
 	}
