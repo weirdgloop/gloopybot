@@ -33,6 +33,18 @@ bot.once('ready', () => {
 	reallyReady();
 });
 
+bot.on('guildCreate', guild => {
+	sql.get(`SELECT * FROM guilds WHERE id=?`, guild.id).then(row => {
+		if (!row) {
+			sql.run('INSERT INTO guilds (id) VALUES (?)', [guild.id]);
+		}
+	}).catch(() => {
+		sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT])').then(() => {
+			sql.run('INSERT INTO guilds (id) VALUES (?)', [guild.id]);
+		});
+	});
+});
+
 const reallyReady = () => {
 	bot.user.setActivity(`with gloop | ${config.prefix}help`);
 	console.log(`Ready: serving ${bot.guilds.size} guilds, in ${bot.channels.size} channels, for ${bot.users.size} users.`);
