@@ -137,7 +137,7 @@ const parseLinks = msg => {
 			if (err === 'NVL') {
 				msg.channel.send('**No search results found for the attempted link(s).** Try using dashes instead to force-create a URL.');
 			} else if (err === 'NDW') {
-				msg.reply(`this server has no default wiki set. Please set one or have a server administrator set one using \`${config.prefix}wiki.\``);
+				msg.reply(`this server has no default wiki set. Please set one or have a server administrator set one using \`${config.prefix}wiki\`.`);
 			} else {
 				console.error(err);
 			}
