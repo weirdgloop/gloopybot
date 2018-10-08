@@ -39,7 +39,7 @@ bot.on('guildCreate', guild => {
 			sql.run('INSERT INTO guilds (id) VALUES (?)', [guild.id]);
 		}
 	}).catch(() => {
-		sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT])').then(() => {
+		sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
 			sql.run('INSERT INTO guilds (id) VALUES (?)', [guild.id]);
 		});
 	});
@@ -52,49 +52,69 @@ const reallyReady = () => {
 
 bot.on('message', msg => {
 	if (msg.author.bot) return;
+	if (msg.channel.type == 'group' || msg.channel.type == 'category') return;
+
+	if (msg.channel.type == 'dm') {
+		sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(row => {
+			init(msg, true);
+		}).catch(() => {
+			sql.run('CREATE TABLE IF NOT EXISTS dms (id TEXT, wiki TEXT)').then(() => {
+				return sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id);
+			}).then(() => {
+				init(msg, true);
+			});
+		});
+	} else {
+		init(msg, false);
+	}
+});
+
+const init = (msg, isDM) => {
 	if (msg.cleanContent.startsWith(config.prefix)) {
 		let cmd = msg.cleanContent.split(' ')[0].substring(config.prefix.length);
 		let args = msg.cleanContent.split(' ').slice(1);
 		if (commands.commands.hasOwnProperty(cmd)) {
 			if (commands.commands[cmd].level !== 0) {
 				if (commands.commands[cmd].level === 1) {
-					if (!authorIsAnyAdmin(msg)) {
+					if (!authorIsAnyAdmin(msg, isDM)) {
 						msg.reply('you have to be a server administrator to do this.');
 					} else {
-						commands.commands[cmd].process(bot, msg, args);
+						commands.commands[cmd].process(bot, msg, args, isDM);
 					}
 				} else {
-					if (!authorIsBotCreator(msg)) {
+					if (!authorIsBotCreator(msg, isDM)) {
 						msg.reply('only the creator of the bot can do this.');
 					} else {
-						commands.commands[cmd].process(bot, msg, args);
+						commands.commands[cmd].process(bot, msg, args, isDM);
 					}
 				}
 			} else {
-				commands.commands[cmd].process(bot, msg, args);
+				commands.commands[cmd].process(bot, msg, args, isDM);
 			}
 		} else {
-			parseLinks(msg);
+			parseLinks(msg, isDM);
 		}
 	} else {
-		parseLinks(msg);
+		parseLinks(msg, isDM);
 	}
-});
+}
 
-const authorIsServerAdmin = msg => {
+const authorIsServerAdmin = (msg, isDM) => {
+	if (isDM) return true;
 	if (msg.guild.id == config.testServer) return true;
 	return msg.member.hasPermission('ADMINISTRATOR');
 };
 
-const authorIsBotCreator = msg => {
+const authorIsBotCreator = (msg, isDM) => {
+	if (isDM) return config.adminID == msg.recipient.id;
 	return config.adminID == msg.author.id;
 };
 
-const authorIsAnyAdmin = msg => {
-	return authorIsServerAdmin(msg) || authorIsBotCreator(msg);
+const authorIsAnyAdmin = (msg, isDM) => {
+	return authorIsServerAdmin(msg, isDM) || authorIsBotCreator(msg, isDM);
 };
 
-const parseLinks = msg => {
+const parseLinks = (msg, isDM) => {
 	let objArr = [];
 	const removeCodeBlocks = msg.cleanContent.replace(/`{3}[\S\s]*?`{3}/gm, '');
 	const removeInlineCode = removeCodeBlocks.replace(/`[\S\s]*?`/gm, '');
@@ -106,7 +126,7 @@ const parseLinks = msg => {
 			let query = queries[i].replace(/\[\[(.*?)(?:\|.*?)?\]\]/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
-			objArr.push({ 'type': 'search', 'query': query, 'wiki': wiki, 'id': msg.channel.id + '@' + msg.guild.id });
+			objArr.push({ 'type': 'search', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id });
 		}
 	}
 
@@ -116,7 +136,7 @@ const parseLinks = msg => {
 			let query = queries[i].replace(/{{(.*?)(?:\|.*?)?}}/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
-			objArr.push({ 'type': 'template', 'query': query, 'wiki': wiki, 'id': msg.channel.id + '@' + msg.guild.id });
+			objArr.push({ 'type': 'template', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id });
 		}
 	}
 
@@ -126,12 +146,12 @@ const parseLinks = msg => {
 			let query = queries[i].replace(/--(.*?)(?:\|.*?)?--/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
-			objArr.push({ 'type': 'raw', 'query': query, 'wiki': wiki, 'id': msg.channel.id + '@' + msg.guild.id });
+			objArr.push({ 'type': 'raw', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id });
 		}
 	}
 
 	if (objArr.length > 0) {
-		buildMessage(objArr).then(replString => {
+		buildMessage(objArr, isDM).then(replString => {
 			msg.channel.send(replString);
 		}).catch(err => {
 			if (err === 'NVL') {
@@ -162,11 +182,11 @@ const parseWikiFromQuery = query => {
 	}
 };
 
-const buildMessage = objectArray => {
+const buildMessage = (objectArray, isDM) => {
 	return new Promise((resolve, reject) => {
 		let promiseArray = [];
 		for (let i = 0; i < objectArray.length; i++) {
-			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id));
+			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM));
 		}
 		Promise.all(promiseArray).then(objects => {
 			let replyStringBegin = '**Links detected:**';
@@ -185,30 +205,39 @@ const buildMessage = objectArray => {
 	});
 };
 
-const getWiki = (objWiki, changuildID) => {
+const getWiki = (objWiki, changuildID, isDM) => {
 	return new Promise((resolve, reject) => {
 		if (objWiki === 'default') {
-			sql.get('SELECT * FROM guilds WHERE id=?', changuildID.split('@')[1]).then(row => {
-				if (!row.mainWiki) {
-					return reject('NDW');
-				}
-				sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', row.id, changuildID.split('@')[0]).then(crow => {
-					if (!crow) {
-						return resolve(wikis[row.mainWiki].url);
-					} else {
-						return resolve(wikis[crow.wiki].url);
+			if (isDM) {
+				sql.get('SELECT * FROM dms WHERE id=?', changuildID).then(row => {
+					if (!row.wiki) {
+						return reject('NDW');
 					}
+					return resolve(wikis[row.wiki].url);
+				})
+			} else {
+				sql.get('SELECT * FROM guilds WHERE id=?', changuildID.split('@')[1]).then(row => {
+					if (!row.mainWiki) {
+						return reject('NDW');
+					}
+					sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', row.id, changuildID.split('@')[0]).then(crow => {
+						if (!crow) {
+							return resolve(wikis[row.mainWiki].url);
+						} else {
+							return resolve(wikis[crow.wiki].url);
+						}
+					});
 				});
-			});
+			}
 		} else {
 			return resolve(wikis[objWiki].url);
 		}
 	});
 };
 
-const requestLink = (query, wiki, type, changuildID) => {
+const requestLink = (query, wiki, type, changuildID, isDM) => {
 	return new Promise((resolve, reject) => {
-		getWiki(wiki, changuildID).then(wurl => {
+		getWiki(wiki, changuildID, isDM).then(wurl => {
 			if (type === 'template') {
 				query = 'Template:' + query;
 			}
