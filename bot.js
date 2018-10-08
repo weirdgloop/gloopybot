@@ -157,7 +157,7 @@ const parseLinks = (msg, isDM) => {
 			if (err === 'NVL') {
 				msg.channel.send('**No search results found for the attempted link(s).** Try using dashes instead to force-create a URL.');
 			} else if (err === 'NDW') {
-				msg.reply(`this server has no default wiki set. Please set one or have a server administrator set one using \`${config.prefix}wiki\`.`);
+				msg.reply(`this server has no default wiki set. Please set one ${!isDM ? 'or have a server administrator set one ' : ''}using \`${config.prefix}wiki\`.`);
 			} else {
 				console.error(err);
 			}
@@ -210,7 +210,7 @@ const getWiki = (objWiki, changuildID, isDM) => {
 		if (objWiki === 'default') {
 			if (isDM) {
 				sql.get('SELECT * FROM dms WHERE id=?', changuildID).then(row => {
-					if (!row.wiki) {
+					if (!row || !row.wiki) {
 						return reject('NDW');
 					}
 					return resolve(wikis[row.wiki].url);
