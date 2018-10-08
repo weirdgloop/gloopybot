@@ -106,7 +106,7 @@ const authorIsServerAdmin = (msg, isDM) => {
 };
 
 const authorIsBotCreator = (msg, isDM) => {
-	if (isDM) return config.adminID == msg.recipient.id;
+	if (isDM) return config.adminID == msg.channel.recipient.id;
 	return config.adminID == msg.author.id;
 };
 
