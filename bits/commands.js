@@ -117,15 +117,23 @@ const commands = {
 		process: (bot, msg, args, isDM) => {
 			if (isDM) {
 				sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(row => {
-					let configString = `\`\`\`md\n# Information for this direct message channel`;
-					configString += `\n<channel_id ${msg.channel.id}>`;
-					if (!row.wiki) {
-						configString += '\n<wiki not set>';
-					} else {
+					if (!row) {
+						let configString = `\`\`\`md\n# Information for this direct message channel`;
+						configString += `\n<channel_id ${msg.channel.id}>`;
 						configString += `\n<wiki ${wikis[row.wiki].longname}>`;
+						configString += '\n```';
+						msg.channel.send(configString);
+					} else {
+						let configString = `\`\`\`md\n# Information for this direct message channel`;
+						configString += `\n<channel_id ${msg.channel.id}>`;
+						if (!row.wiki) {
+							configString += '\n<wiki not set>';
+						} else {
+							configString += `\n<wiki ${wikis[row.wiki].longname}>`;
+						}
+						configString += '\n```';
+						msg.channel.send(configString);
 					}
-					configString += '\n```';
-					msg.channel.send(configString);
 				});
 			} else {
 				sql.get('SELECT * FROM guilds WHERE id=?', msg.guild.id).then(grow => {
