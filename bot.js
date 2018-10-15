@@ -155,9 +155,14 @@ const parseLinks = (msg, isDM) => {
 			msg.channel.send(replString);
 		}).catch(err => {
 			if (err === 'NVL') {
-				msg.channel.send('**No search results found for the attempted link(s).** Try using dashes instead to force-create a URL.');
+				msg.channel.send([
+					'**No search results found for the attempted link(s).**',
+					'Try using dashes instead to force-create a URL.'
+				]);
 			} else if (err === 'NDW') {
 				msg.reply(`this server has no default wiki set. Please set one ${!isDM ? 'or have a server administrator set one ' : ''}using \`${config.prefix}wiki\`.`);
+			} else if (err === 'ERO') {
+				()=>{}; //noop - if it's only empty rawlinks just ignore the entire message altogether
 			} else {
 				console.error(err);
 			}
@@ -189,12 +194,16 @@ const buildMessage = (objectArray, isDM) => {
 			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM));
 		}
 		Promise.all(promiseArray).then(objects => {
+			let emptyRawsOnly = true;
 			let replyStringBegin = '**Links detected:**';
 			let replyString = '';
 			for (let j = 0; j < objects.length; j++) {
 				if (objects[j] === 404) continue;
+				if (objects[j][0][0] !== '' && objects[j][1][0] !== '') emptyRawsOnly = false;
+				else continue;
 				replyString += '\n<' + objects[j][3][0] + '>';
 			}
+			if (emptyRawsOnly) return reject('ERO');
 			if (replyString.length > 0) return resolve(replyStringBegin + replyString);
 			else return reject('NVL');
 		}).catch(err => {
