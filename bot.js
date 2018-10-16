@@ -33,6 +33,10 @@ bot.once('ready', () => {
 	reallyReady();
 });
 
+bot.on('error', error => {
+	console.error('Websocket error! ' + error);
+});
+
 bot.on('guildCreate', guild => {
 	sql.get(`SELECT * FROM guilds WHERE id=?`, guild.id).then(row => {
 		if (!row) {
