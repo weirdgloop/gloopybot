@@ -195,7 +195,7 @@ const buildMessage = (objectArray, isDM) => {
 	return new Promise((resolve, reject) => {
 		let promiseArray = [];
 		for (let i = 0; i < objectArray.length; i++) {
-			promiseArray.push(wikiUrlEncode(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM)));
+			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM));
 		}
 		Promise.all(promiseArray).then(objects => {
 			let emptyRawsOnly = true;
@@ -205,7 +205,7 @@ const buildMessage = (objectArray, isDM) => {
 				if (objects[j] === 404) continue;
 				if (objects[j][0][0] !== '' && objects[j][1][0] !== '') emptyRawsOnly = false;
 				else continue;
-				replyString += '\n<' + objects[j][3][0] + '>';
+				replyString += '\n<' + wikiUrlEncode(objects[j][3][0]) + '>';
 			}
 			if (emptyRawsOnly) return reject('ERO');
 			if (replyString.length > 0) return resolve(replyStringBegin + replyString);
@@ -278,6 +278,7 @@ const requestLink = (query, wiki, type, changuildID, isDM) => {
 };
 
 const wikiUrlEncode = (url) => encodeURIComponent(url)
+	.replace(/%25/, '%')
 	.replace(/!/g, '%21')
 	.replace(/'/g, '%27')
 	.replace(/\(/g, '%28')
@@ -287,7 +288,7 @@ const wikiUrlEncode = (url) => encodeURIComponent(url)
 	.replace(/%20/g, '_')
 	.replace(/%3A/g, ':')
 	.replace(/%2F/g, '/')
-	.replace(/\+/g, '%53');
+	.replace(/\+/g, '%2B');
 
 //String.prototype.padStart polyfill
 if (!String.prototype.padStart) {
