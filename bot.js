@@ -205,7 +205,7 @@ const buildMessage = (objectArray, isDM) => {
 				if (objects[j] === 404) continue;
 				if (objects[j][0][0] !== '' && objects[j][1][0] !== '') emptyRawsOnly = false;
 				else continue;
-				replyString += '\n<' + wikiUrlEncode(objects[j][3][0]) + '>';
+				replyString += '\n<' + objects[j][3][0] + '>';
 			}
 			if (emptyRawsOnly) return reject('ERO');
 			if (replyString.length > 0) return resolve(replyStringBegin + replyString);
@@ -278,7 +278,6 @@ const requestLink = (query, wiki, type, changuildID, isDM) => {
 };
 
 const wikiUrlEncode = (url) => encodeURIComponent(url)
-	.replace(/%25/, '%')
 	.replace(/!/g, '%21')
 	.replace(/'/g, '%27')
 	.replace(/\(/g, '%28')
