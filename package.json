@@ -1,6 +1,6 @@
 {
   "name": "gloopybot",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "dependencies": {
     "discord.js": "^11.2.1",
     "needle": "^2.1.0",

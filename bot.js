@@ -195,7 +195,7 @@ const buildMessage = (objectArray, isDM) => {
 	return new Promise((resolve, reject) => {
 		let promiseArray = [];
 		for (let i = 0; i < objectArray.length; i++) {
-			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM));
+			promiseArray.push(wikiUrlEncode(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM)));
 		}
 		Promise.all(promiseArray).then(objects => {
 			let emptyRawsOnly = true;
@@ -256,7 +256,7 @@ const requestLink = (query, wiki, type, changuildID, isDM) => {
 			}
 	
 			if (type !== 'raw') {
-				let url = `${wurl}/api.php?action=opensearch&search=${query}&limit=1&redirects=resolve`;
+				let url = `${wurl}/api.php?action=opensearch&search=${wikiUrlEncode(query)}&limit=1&redirects=resolve`;
 				needle('get', url).then(response => {
 					if (response.body[1].length === 0) {
 						return resolve(404);
@@ -276,6 +276,18 @@ const requestLink = (query, wiki, type, changuildID, isDM) => {
 		});
 	});
 };
+
+const wikiUrlEncode = (url) => encodeURIComponent(url)
+	.replace(/!/g, '%21')
+	.replace(/'/g, '%27')
+	.replace(/\(/g, '%28')
+	.replace(/\)/g, '%29')
+	.replace(/\*/g, '%2A')
+	.replace(/~/g, '%7E')
+	.replace(/%20/g, '_')
+	.replace(/%3A/g, ':')
+	.replace(/%2F/g, '/')
+	.replace(/\+/g, '%53');
 
 //String.prototype.padStart polyfill
 if (!String.prototype.padStart) {
