@@ -7,6 +7,10 @@
 		"url": "https://oldschool.runescape.wiki",
 		"longname": "Old School RuneScape"
 	},
+	"p": {
+		"url": "https://pt.runescape.wiki",
+		"longname": "RuneScape (Português)"
+	},
 	"m": {
 		"url": "https://meta.weirdgloop.org",
 		"longname": "Meta"

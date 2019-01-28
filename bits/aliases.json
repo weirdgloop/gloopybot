@@ -47,6 +47,22 @@
 		"wiki": "o",
 		"setOnly": false
 	},
+	"pt": {
+		"wiki": "p",
+		"setOnly": false
+	},
+	"br": {
+		"wiki": "p",
+		"setOnly": false
+	},
+	"ptbr": {
+		"wiki": "p",
+		"setOnly": false
+	},
+	"ptrsw": {
+		"wiki": "p",
+		"setOnly": false
+	},
 	"meta": {
 		"wiki": "m",
 		"setOnly": false
