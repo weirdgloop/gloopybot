@@ -11,6 +11,10 @@
 		"url": "https://pt.runescape.wiki",
 		"longname": "RuneScape (Português)"
 	},
+	"c": {
+		"url": "https://classic.runescape.wiki",
+		"longname": "RuneScape Classic"
+	},
 	"m": {
 		"url": "https://meta.weirdgloop.org",
 		"longname": "Meta"

@@ -63,6 +63,18 @@
 		"wiki": "p",
 		"setOnly": false
 	},
+	"rscw": {
+		"wiki": "c",
+		"setOnly": false
+	},
+	"classic": {
+		"wiki": "c",
+		"setOnly": false
+	},
+	"rsc": {
+		"wiki": "c",
+		"setOnly": false
+	},
 	"meta": {
 		"wiki": "m",
 		"setOnly": false
