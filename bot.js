@@ -59,7 +59,7 @@ bot.on('message', msg => {
 	if (msg.channel.type == 'group' || msg.channel.type == 'category') return;
 
 	if (msg.channel.type == 'dm') {
-		sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(row => {
+		sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(() => {
 			init(msg, true);
 		}).catch(() => {
 			sql.run('CREATE TABLE IF NOT EXISTS dms (id TEXT, wiki TEXT)').then(() => {

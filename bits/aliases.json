@@ -90,5 +90,13 @@
 	"weirdgloop": {
 		"wiki": "m",
 		"setOnly": false
+	},
+	"wp": {
+		"wiki": "w",
+		"setOnly": false
+	},
+	"wikipedia": {
+		"wiki": "w",
+		"setOnly": false
 	}
 }

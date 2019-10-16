@@ -18,5 +18,9 @@
 	"m": {
 		"url": "https://meta.weirdgloop.org",
 		"longname": "Meta"
+	},
+	"w": {
+		"url": "https://en.wikipedia.org/w/",
+		"longname": "Wikipedia (English)"
 	}
 }
