@@ -266,7 +266,7 @@ const requestLink = (query, wiki, type, changuildID, isDM) => {
 					return reject(err);
 				});
 			} else {
-				let url = `${wurl}/w/${query.replace(/ /g, '_')}`;
+				let url = `${wurl}/w/${wikiUrlEncode(query)}`;
 				return resolve([ query, [ query ], [ '' ], [ url ] ]);
 			}
 		}).catch(err => {
@@ -287,7 +287,8 @@ const wikiUrlEncode = (url) => encodeURIComponent(url)
 	.replace(/%20/g, '_')
 	.replace(/%3A/g, ':')
 	.replace(/%2F/g, '/')
-	.replace(/\+/g, '%2B');
+	.replace(/\+/g, '%2B')
+	.replace(/\@/g, '%40');
 
 //String.prototype.padStart polyfill
 if (!String.prototype.padStart) {
