@@ -228,6 +228,37 @@ const commands = {
 		process: (bot, msg) => {
 			msg.reply(['add the bot to your own server using the invite link below:','https://discordapp.com/oauth2/authorize?client_id=393024915755761674&scope=bot&permissions=330752']);
 		}
+	},
+	'userwiki': {
+		level: 0,
+		help_desc: 'set your own personal user override, which has higher priority than any other setting',
+		help_subcmds: '',
+		process: (bot, msg, args) => {
+			let wiki = args[0];
+			if (Object.keys(wikis).includes(wiki)) {
+				sql.get('SELECT * FROM userOverride WHERE userID=?', msg.author.id).then(orow => {
+					if (!orow) {
+						return sql.run('INSERT INTO userOverride VALUES (?,?)', msg.author.id, wiki);
+					} else {
+						return sql.run('UPDATE userOverride SET wiki=? WHERE userID=?', wiki, msg.author.id);
+					}
+				}).then(() => {
+					msg.reply(`your personal override wiki is now set to **${wikis[wiki].longname}**.`);
+				});
+			} else if (Object.keys(walias).includes(wiki)) {
+				sql.get('SELECT * FROM userOverride WHERE userID=?', msg.author.id).then(orow => {
+					if (!orow) {
+						return sql.run('INSERT INTO userOverride VALUES (?,?)', msg.author.id, walias[wiki].wiki);
+					} else {
+						return sql.run('UPDATE userOverride SET wiki=? WHERE userID=?', walias[wiki].wiki, msg.author.id);
+					}
+				}).then(() => {
+					msg.reply(`your personal override wiki is now set to **${wikis[walias[wiki].wiki].longname}**.`);
+				});
+			} else {
+				invalidReply(bot, msg, true);
+			}
+		}
 	}
 };
 

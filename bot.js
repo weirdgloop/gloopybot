@@ -17,17 +17,17 @@ needle.defaults({
 });
 
 bot.once('ready', () => {
-	bot.guilds.forEach(guild => {
-		sql.get('SELECT * FROM guilds WHERE id=?', guild.id).then(row => {
-			if (!row) {
-				sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
-			}
-		}).catch(() => {
-			sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
-				return sql.run('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT)');
-			}).then(() => {
-				return sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
-			});
+	sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
+		return sql.run('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT)');
+	}).then(() => {
+		return sql.run('CREATE TABLE IF NOT EXISTS userOverride (userid TEXT, wiki TEXT)');
+	}).then(() => {
+		bot.guilds.forEach(guild => {
+			sql.get('SELECT * FROM guilds WHERE id=?', guild.id).then(row => {
+				if (!row) {
+					sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
+				}
+			})
 		});
 	});
 	reallyReady();
@@ -130,7 +130,7 @@ const parseLinks = (msg, isDM) => {
 			let query = queries[i].replace(/\[\[(.*?)(?:\|.*?)?\]\]/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
-			objArr.push({ 'type': 'search', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id });
+			objArr.push({ 'type': 'search', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id, 'user': msg.author.id });
 		}
 	}
 
@@ -140,7 +140,7 @@ const parseLinks = (msg, isDM) => {
 			let query = queries[i].replace(/{{(.*?)(?:\|.*?)?}}/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
-			objArr.push({ 'type': 'template', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id });
+			objArr.push({ 'type': 'template', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id, 'user': msg.author.id });
 		}
 	}
 
@@ -150,7 +150,7 @@ const parseLinks = (msg, isDM) => {
 			let query = queries[i].replace(/--(.*?)(?:\|.*?)?--/g, '$1');
 			let wiki = parseWikiFromQuery(query);
 			if (wiki !== 'default') query = query.replace(/^.*?:/g, '');
-			objArr.push({ 'type': 'raw', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id });
+			objArr.push({ 'type': 'raw', 'query': query, 'wiki': wiki, 'id': isDM ? msg.channel.id : msg.channel.id + '@' + msg.guild.id, 'user': msg.author.id });
 		}
 	}
 
@@ -195,7 +195,7 @@ const buildMessage = (objectArray, isDM) => {
 	return new Promise((resolve, reject) => {
 		let promiseArray = [];
 		for (let i = 0; i < objectArray.length; i++) {
-			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM));
+			promiseArray.push(requestLink(objectArray[i].query, objectArray[i].wiki, objectArray[i].type, objectArray[i].id, isDM, objectArray[i].user));
 		}
 		Promise.all(promiseArray).then(objects => {
 			let emptyRawsOnly = true;
@@ -218,7 +218,7 @@ const buildMessage = (objectArray, isDM) => {
 	});
 };
 
-const getWiki = (objWiki, changuildID, isDM) => {
+const getWiki = (objWiki, changuildID, isDM, user) => {
 	return new Promise((resolve, reject) => {
 		if (objWiki === 'default') {
 			if (isDM) {
@@ -229,17 +229,23 @@ const getWiki = (objWiki, changuildID, isDM) => {
 					return resolve(wikis[row.wiki].url);
 				})
 			} else {
-				sql.get('SELECT * FROM guilds WHERE id=?', changuildID.split('@')[1]).then(row => {
-					if (!row.mainWiki) {
-						return reject('NDW');
+				sql.get('SELECT * FROM userOverride WHERE userID=?', user).then(urow => {
+					if (urow.wiki) {
+						return resolve(wikis[urow.wiki].url);
+					} else {
+						sql.get('SELECT * FROM guilds WHERE id=?', changuildID.split('@')[1]).then(row => {
+							if (!row.mainWiki) {
+								return reject('NDW');
+							}
+							sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', row.id, changuildID.split('@')[0]).then(crow => {
+								if (!crow) {
+									return resolve(wikis[row.mainWiki].url);
+								} else {
+									return resolve(wikis[crow.wiki].url);
+								}
+							});
+						});
 					}
-					sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', row.id, changuildID.split('@')[0]).then(crow => {
-						if (!crow) {
-							return resolve(wikis[row.mainWiki].url);
-						} else {
-							return resolve(wikis[crow.wiki].url);
-						}
-					});
 				});
 			}
 		} else {
@@ -248,9 +254,9 @@ const getWiki = (objWiki, changuildID, isDM) => {
 	});
 };
 
-const requestLink = (query, wiki, type, changuildID, isDM) => {
+const requestLink = (query, wiki, type, changuildID, isDM, user) => {
 	return new Promise((resolve, reject) => {
-		getWiki(wiki, changuildID, isDM).then(wurl => {
+		getWiki(wiki, changuildID, isDM, user).then(wurl => {
 			if (type === 'template') {
 				query = 'Template:' + query;
 			}
