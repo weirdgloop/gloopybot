@@ -149,15 +149,15 @@ const commands = {
 						if (rows.length > 0) {
 							let longest = 0;
 							for (let i = 0; i < rows.length; i++) {
-								if (bot.channels.get(rows[i].channelID)) {
-									if (bot.channels.get(rows[i].channelID).name.length > longest) longest = bot.channels.get(rows[i].channelID).name.length;
+								if (bot.channels.cache.get(rows[i].channelID)) {
+									if (bot.channels.cache.get(rows[i].channelID).name.length > longest) longest = bot.channels.cache.get(rows[i].channelID).name.length;
 								} else {
 									if (7 > longest) longest = 7;
 								}
 							}
 							for (let i = 0; i < rows.length; i++) {
-								if (bot.channels.get(rows[i].channelID)) {
-									configString += `\n[${bot.channels.get(rows[i].channelID).name.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
+								if (bot.channels.cache.get(rows[i].channelID)) {
+									configString += `\n[${bot.channels.cache.get(rows[i].channelID).name.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
 								} else {
 									configString += `\n[${`?#${rows[i].channelID.substring(rows[i].channelID.length - 4)}?`.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
 								}

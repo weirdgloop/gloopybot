@@ -22,7 +22,7 @@ bot.once('ready', () => {
 	}).then(() => {
 		return sql.run('CREATE TABLE IF NOT EXISTS userOverride (userid TEXT, wiki TEXT)');
 	}).then(() => {
-		bot.guilds.forEach(guild => {
+		bot.guilds.cache.forEach(guild => {
 			sql.get('SELECT * FROM guilds WHERE id=?', guild.id).then(row => {
 				if (!row) {
 					sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
@@ -51,7 +51,7 @@ bot.on('guildCreate', guild => {
 
 const reallyReady = () => {
 	bot.user.setActivity(`with gloop | ${config.prefix}help`);
-	console.log(`Ready: serving ${bot.guilds.size} guilds, in ${bot.channels.size} channels, for ${bot.users.size} users.`);
+	console.log(`Ready: serving ${bot.guilds.cache.size} guilds, in ${bot.channels.cache.size} channels, for ${bot.users.cache.size} users.`);
 };
 
 bot.on('message', msg => {
@@ -230,7 +230,7 @@ const getWiki = (objWiki, changuildID, isDM, user) => {
 				})
 			} else {
 				sql.get('SELECT * FROM userOverride WHERE userID=?', user).then(urow => {
-					if (urow.wiki) {
+					if (urow && urow.wiki) {
 						return resolve(wikis[urow.wiki].url);
 					} else {
 						sql.get('SELECT * FROM guilds WHERE id=?', changuildID.split('@')[1]).then(row => {
