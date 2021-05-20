@@ -226,7 +226,7 @@ const commands = {
 		help_desc: 'get the invite for adding the bot to your own server',
 		help_subcmds: '',
 		process: (bot, msg) => {
-			msg.reply(['add the bot to your own server using the invite link below:','https://discordapp.com/oauth2/authorize?client_id=393024915755761674&scope=bot&permissions=330752']);
+			msg.reply(['add the bot to your own server using the invite link below:','<https://nvld.krd/gloopybot>']);
 		}
 	},
 	'userwiki': {
