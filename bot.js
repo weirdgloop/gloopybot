@@ -205,7 +205,7 @@ const buildMessage = (objectArray, isDM) => {
 				if (objects[j] === 404) continue;
 				if (objects[j][0][0] !== '' && objects[j][1][0] !== '') emptyRawsOnly = false;
 				else continue;
-				replyString += '\n<' + wikiUrlEncode(objects[j][3][0]) + '>';
+				replyString += '\n<' + fixDiscordLink(objects[j][3][0]) + '>';
 			}
 			if (emptyRawsOnly) return reject('ERO');
 			if (replyString.length > 0) return resolve(replyStringBegin + replyString);
@@ -272,7 +272,7 @@ const requestLink = (query, wiki, type, changuildID, isDM, user) => {
 					return reject(err);
 				});
 			} else {
-				let url = `${wurl}/w/${wikiUrlEncode(query)}`;
+				let url = `${wurl}/w/${query}`;
 				return resolve([ query, [ query ], [ '' ], [ url ] ]);
 			}
 		}).catch(err => {
@@ -282,6 +282,8 @@ const requestLink = (query, wiki, type, changuildID, isDM, user) => {
 		});
 	});
 };
+
+const fixDiscordLink = (url) => url.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/%23/g, '#');
 
 const wikiUrlEncode = (url) => encodeURIComponent(url)
 	.replace(/!/g, '%21')
