@@ -283,7 +283,7 @@ const requestLink = (query, wiki, type, changuildID, isDM, user) => {
 	});
 };
 
-const fixDiscordLink = (url) => url.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/%23/g, '#');
+const fixDiscordLink = (url) => url.replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/%23/g, '#').replace(/ /g, '_');
 
 const wikiUrlEncode = (url) => encodeURIComponent(url)
 	.replace(/!/g, '%21')
