@@ -1,5 +1,4 @@
-const sql = require('sqlite');
-sql.open('./bits/db.sqlite');
+const fs = require('fs');
 
 const wikis = require('./wikis.json');
 const walias = require('./aliases.json');
@@ -18,45 +17,38 @@ const commands = {
 		level: 1,
 		help_desc: 'set the wiki of the entire server',
 		help_subcmds: '',
-		process: (bot, msg, args, isDM) => {
+		process: (bot, msg, args, isDM, db) => {
 			let wiki = args[0];
 			if (isDM) {
-				sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(row => {
-					if (row) {
-						if (Object.keys(wikis).includes(wiki)) {
-							sql.run('UPDATE dms SET wiki=? WHERE id=?', wiki, msg.channel.id).then(() => {
-								msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[wiki].longname}**.`);
-							}).catch(err => { console.error('DM update wiki\n' + err) });
-						} else if (Object.keys(walias).includes(wiki)) {
-							sql.run('UPDATE dms SET wiki=? WHERE id=?', walias[wiki].wiki, msg.channel.id).then(() => {
-								msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[walias[wiki].wiki].longname}**.`);
-							}).catch(err => { console.error('DM update alias\n' + err) });
-						} else {
-							invalidReply(bot, msg, true);
-						}
+				const dRow = db.prepare('SELECT * FROM dms WHERE id=?').get(msg.channel.id);
+				if (dRow) {
+					if (Object.keys(wikis).includes(wiki)) {
+						db.prepare('UPDATE dms SET wiki=? WHERE id=?').run(wiki, msg.channel.id);
+						msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[wiki].longname}**.`);
+					} else if (Object.keys(walias).includes(wiki)) {
+						db.prepare('UPDATE dms SET wiki=? WHERE id=?').run(walias[wiki].wiki, msg.channel.id);
+						msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[walias[wiki].wiki].longname}**.`);
 					} else {
-						if (Object.keys(wikis).includes(wiki)) {
-							sql.run('INSERT INTO dms (id, wiki) VALUES (?,?)', [msg.channel.id, wiki]).then(() => {
-								msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[wiki].longname}**.`);
-							}).catch(err => { console.error('DM insert wiki\n' + err) });
-						} else if (Object.keys(walias).includes(wiki)) {
-							sql.run('INSERT INTO dms (id, wiki) VALUES (?,?)', [msg.channel.id, walias[wiki].wiki]).then(() => {
-								msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[walias[wiki].wiki].longname}**.`);
-							}).catch(err => { console.error('DM insert alias\n' + err) });
-						} else {
-							invalidReply(bot, msg, true);
-						}
+						invalidReply(bot, msg, true);
 					}
-				}).catch(err => { console.error('DM get\n' + err) });
+				} else {
+					if (Object.keys(wikis).includes(wiki)) {
+						db.prepare('INSERT INTO dms (id, wiki) VALUES (?,?)').run(msg.channel.id, wiki);
+						msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[wiki].longname}**.`);
+					} else if (Object.keys(walias).includes(wiki)) {
+						db.prepare('INSERT INTO dms (id, wiki) VALUES (?,?)').run(msg.channel.id, walias[wiki].wiki);
+						msg.channel.send(`The wiki of this direct message channel is now set to **${wikis[walias[wiki].wiki].longname}**.`);
+					} else {
+						invalidReply(bot, msg, true);
+					}
+				}
 			} else {
 				if (Object.keys(wikis).includes(wiki)) {
-					sql.run('UPDATE guilds SET mainWiki=? WHERE id=?', wiki, msg.guild.id).then(() => {
-						msg.reply(`the wiki of guild **${msg.guild.name}** is now set to **${wikis[wiki].longname}**.`);
-					});
+					db.prepare('UPDATE guilds SET mainWiki=? WHERE id=?').run(wiki, msg.guild.id);
+					msg.channel.send(`The wiki of this server is now set to **${wikis[wiki].longname}**.`);
 				} else if (Object.keys(walias).includes(wiki)) {
-					sql.run('UPDATE guilds SET mainWiki=? WHERE id=?', walias[wiki].wiki, msg.guild.id).then(() => {
-						msg.reply(`the wiki of guild **${msg.guild.name}** is now set to **${wikis[walias[wiki].wiki].longname}**.`);
-					});
+					db.prepare('UPDATE guilds SET mainWiki=? WHERE id=?').run(walias[wiki].wiki, msg.guild.id);
+					msg.channel.send(`The wiki of this server is now set to **${wikis[walias[wiki].wiki].longname}**.`);
 				} else {
 					invalidReply(bot, msg, true);
 				}
@@ -67,44 +59,38 @@ const commands = {
 		level: 1,
 		help_desc: 'set the wiki override for the current channel',
 		help_subcmds: '',
-		process: (bot, msg, args, isDM) => {
+		process: (bot, msg, args, isDM, db) => {
 			if (isDM) {
 				msg.channel.send('You can\'t set overrides in a DM!');
 				return;
 			}
 			let wiki = args[0];
 			if (Object.keys(wikis).includes(wiki)) {
-				sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', msg.guild.id, msg.channel.id).then(orow => {
-					if (!orow) {
-						return sql.run('INSERT INTO overrides VALUES (?,?,?)', msg.guild.id, msg.channel.id, wiki);
+				const oRow = db.prepare('SELECT * FROM overrides WHERE guildID=? AND channelID=?').get(msg.guild.id, msg.channel.id);
+				if (!oRow) {
+					db.prepare('INSERT INTO overrides VALUES (?,?,?)').run(msg.guild.id, msg.channel.id, wiki);
+				} else {
+					const gRow = db.prepare('SELECT * FROM guilds WHERE id=?').get(msg.guild.id);
+					if (gRow.mainWiki === wiki) {
+						db.prepare('DELETE FROM overrides WHERE guildID=? AND channelID=?').run(msg.guild.id, msg.channel.id);
 					} else {
-						return sql.get('SELECT * FROM guilds WHERE id=?', msg.guild.id).then(grow => {
-							if (grow.mainWiki === wiki) {
-								return sql.run('DELETE FROM overrides WHERE guildID=? AND channelID=?', msg.guild.id, msg.channel.id);
-							} else {
-								return sql.run('UPDATE overrides SET wiki=? WHERE guildID=? AND channelID=?', wiki, msg.guild.id, msg.channel.id);
-							}
-						});
+						db.prepare('UPDATE overrides SET wiki=? WHERE guildID=? AND channelID=?').run(wiki, msg.guild.id, msg.channel.id);
 					}
-				}).then(() => {
-					msg.reply(`the wiki of channel **${msg.channel.name}** is now set to **${wikis[wiki].longname}**.`);
-				});
+				}
+				msg.reply(`The wiki of channel **${msg.channel.name}** is now set to **${wikis[wiki].longname}**.`);
 			} else if (Object.keys(walias).includes(wiki)) {
-				sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', msg.guild.id, msg.channel.id).then(orow => {
-					if (!orow) {
-						return sql.run('INSERT INTO overrides VALUES (?,?,?)', msg.guild.id, msg.channel.id, walias[wiki].wiki);
+				const oRow = db.prepare('SELECT * FROM overrides WHERE guildID=? AND channelID=?').get(msg.guild.id, msg.channel.id);
+				if (!oRow) {
+					db.prepare('INSERT INTO overrides VALUES (?,?,?)').run(msg.guild.id, msg.channel.id, walias[wiki].wiki);
+				} else {
+					const gRow = db.prepare('SELECT * FROM guilds WHERE id=?').get(msg.guild.id);
+					if (gRow.mainWiki === wiki) {
+						db.prepare('DELETE FROM overrides WHERE guildID=? AND channelID=?').run(msg.guild.id, msg.channel.id);
 					} else {
-						return sql.get('SELECT * FROM guilds WHERE id=?', msg.guild.id).then(grow => {
-							if (grow.mainWiki === walias[wiki].wiki) {
-								return sql.run('DELETE FROM overrides WHERE guildID=? AND channelID=?', msg.guild.id, msg.channel.id);
-							} else {
-								return sql.run('UPDATE overrides SET wiki=? WHERE guildID=? AND channelID=?', walias[wiki].wiki, msg.guild.id, msg.channel.id);
-							}
-						});
+						db.prepare('UPDATE overrides SET wiki=? WHERE guildID=? AND channelID=?').run(walias[wiki].wiki, msg.guild.id, msg.channel.id);
 					}
-				}).then(() => {
-					msg.reply(`the wiki of channel **${msg.channel.name}** is now set to **${wikis[walias[wiki].wiki].longname}**.`);
-				});
+				}
+				msg.reply(`The wiki of channel **${msg.channel.name}** is now set to **${wikis[walias[wiki].wiki].longname}**.`);
 			} else {
 				invalidReply(bot, msg, true);
 			}
@@ -114,67 +100,72 @@ const commands = {
 		level: 0,
 		help_desc: 'shows the bot setup for the current server',
 		help_subcmds: '',
-		process: (bot, msg, args, isDM) => {
+		process: (bot, msg, args, isDM, db) => {
 			if (isDM) {
-				sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(row => {
-					if (!row) {
-						let configString = `\`\`\`md\n# Information for this direct message channel`;
-						configString += `\n<channel_id ${msg.channel.id}>`;
-						configString += `\n<wiki ${wikis[row.wiki].longname}>`;
-						configString += '\n```';
-						msg.channel.send(configString);
+				const dRow = db.prepare('SELECT * FROM dms WHERE id=?').get(msg.channel.id);
+				if (!dRow) {
+					let configString = `\`\`\`md\n# Information for this direct message channel`;
+					configString += `\n<channel_id ${msg.channel.id}>`;
+					configString += `\n<wiki not set>`;
+					configString += '\n```';
+					msg.channel.send(configString);
+				} else {
+					let configString = `\`\`\`md\n# Information for this direct message channel`;
+					configString += `\n<channel_id ${msg.channel.id}>`;
+					if (!dRow.wiki) {
+						configString += '\n<wiki not set>';
 					} else {
-						let configString = `\`\`\`md\n# Information for this direct message channel`;
-						configString += `\n<channel_id ${msg.channel.id}>`;
-						if (!row.wiki) {
-							configString += '\n<wiki not set>';
-						} else {
-							configString += `\n<wiki ${wikis[row.wiki].longname}>`;
-						}
-						configString += '\n```';
-						msg.channel.send(configString);
+						configString += `\n<wiki ${wikis[dRow.wiki].longname}>`;
 					}
-				});
+					configString += '\n```';
+					msg.channel.send(configString);
+				}
 			} else {
-				sql.get('SELECT * FROM guilds WHERE id=?', msg.guild.id).then(grow => {
-					let configString = `\`\`\`md\n# Information for server ${msg.guild.name}`;
-					configString += `\n<server_id ${msg.guild.id}>`;
-					if (!grow.mainWiki) {
-						configString += '\n<main_wiki not set>';
-					} else {
-						configString += `\n<main_wiki ${wikis[grow.mainWiki].longname}>`;
-					}
-					sql.all('SELECT * FROM overrides WHERE guildID=?', msg.guild.id).then(rows => {
-						configString += `\n<overrides ${rows.length} total>`;
-						if (rows.length > 0) {
-							let longest = 0;
-							for (let i = 0; i < rows.length; i++) {
-								if (bot.channels.cache.get(rows[i].channelID)) {
-									if (bot.channels.cache.get(rows[i].channelID).name.length > longest) longest = bot.channels.cache.get(rows[i].channelID).name.length;
-								} else {
-									if (7 > longest) longest = 7;
-								}
-							}
-							for (let i = 0; i < rows.length; i++) {
-								if (bot.channels.cache.get(rows[i].channelID)) {
-									configString += `\n[${bot.channels.cache.get(rows[i].channelID).name.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
-								} else {
-									configString += `\n[${`?#${rows[i].channelID.substring(rows[i].channelID.length - 4)}?`.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
-								}
-							}
+				const gRow = db.prepare('SELECT * FROM guilds WHERE id=?').get(msg.guild.id);
+				let configString = `\`\`\`md\n# Information for server ${msg.guild.name}`;
+				configString += `\n<server_id ${msg.guild.id}>`;
+				if (!gRow.mainWiki) {
+					configString += '\n<main_wiki not set>';
+				} else {
+					configString += `\n<main_wiki ${wikis[gRow.mainWiki].longname}>`;
+				}
+				const rows = db.prepare('SELECT * FROM overrides WHERE guildID=?').all(msg.guild.id);
+				configString += `\n<overrides ${rows.length} total>`;
+				if (rows.length > 0) {
+					let longest = 0;
+					for (let i = 0; i < rows.length; i++) {
+						if (bot.channels.cache.get(rows[i].channelID)) {
+							if (bot.channels.cache.get(rows[i].channelID).name.length > longest) longest = bot.channels.cache.get(rows[i].channelID).name.length;
+						} else {
+							if (7 > longest) longest = 7;
 						}
-						configString += '\n```';
-						msg.channel.send(configString);
-					});
-				});
+					}
+					for (let i = 0; i < rows.length; i++) {
+						if (bot.channels.cache.get(rows[i].channelID)) {
+							configString += `\n[${bot.channels.cache.get(rows[i].channelID).name.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
+						} else {
+							configString += `\n[${`?#${rows[i].channelID.substring(rows[i].channelID.length - 4)}?`.padStart(longest)}][${wikis[rows[i].wiki].longname}]`;
+						}
+					}
+				}
+				configString += '\n```';
+				msg.channel.send(configString);
 			}
 		}
 	},
 	'restart': {
 		level: 2,
 		process: (bot, msg) => {
-			msg.reply('restarting bot!');
+			msg.reply('Restarting bot!');
 			setTimeout(() => process.exit(1), 500);
+		}
+	},
+	'servers': {
+		level: 2,
+		process: (bot, msg) => {
+			const servers = Array.from(bot.guilds.cache.values()).sort((a,b) => a.memberCount - b.memberCount).map(guild => `${guild.name} (with ${guild.memberCount} members)`).join('\n');
+			fs.writeFileSync('./servers.txt', servers);
+			msg.channel.send({content: 'Here they are', files: [{attachment: './servers.txt', name: 'servers.txt'}]});
 		}
 	},
 	'help': {
@@ -185,7 +176,8 @@ const commands = {
 			let header = '```md\n# COMMAND LIST\n';
 			let footer = '\n# Linking syntax\n* < [[term]] > uses the API to search for the page\n* < {{term}} > uses the API to search for the template\n* < --term-- > links to the page no matter' +
 					 ' what, which means the page may not exist.\n\n# One-time overrides\n* You can use the name of the wiki before a link to apply it to a different wiki than the' +
-					 ' default one for the channel.\n* For example, in a channel where the default is the RS3 wiki, <[[osrs:Bucket]]> links to the OSRS version of the page.\n```';
+					 ' default one for the channel.\n* For example, in a channel where the default is the RS3 wiki, <[[osrs:Bucket]]> links to the OSRS version of the page.\n\n' +
+					 '# Privacy policy\nThe privacy policy for GloopyBot can be found at https://invalid.cards/gloopybot/\n```';
 			let cmdlist = '';
 			let longest = -1;
 			for (let i = 0; i < Object.getOwnPropertyNames(commands).length; i++) {
@@ -226,35 +218,34 @@ const commands = {
 		help_desc: 'get the invite for adding the bot to your own server',
 		help_subcmds: '',
 		process: (bot, msg) => {
-			msg.reply(['add the bot to your own server using the invite link below:','<https://nvld.krd/gloopybot>']);
+			msg.reply('Add the bot to your own server using the invite link below:\n<https://nvld.krd/gloopybot>');
 		}
 	},
 	'userwiki': {
 		level: 0,
-		help_desc: 'set your own personal user override, which has higher priority than any other setting',
+		help_desc: 'set your own personal user override, which has higher priority than any other setting. use "default" to reset',
 		help_subcmds: '',
-		process: (bot, msg, args) => {
+		process: (bot, msg, args, isDM, db) => {
 			let wiki = args[0];
 			if (Object.keys(wikis).includes(wiki)) {
-				sql.get('SELECT * FROM userOverride WHERE userID=?', msg.author.id).then(orow => {
-					if (!orow) {
-						return sql.run('INSERT INTO userOverride VALUES (?,?)', msg.author.id, wiki);
-					} else {
-						return sql.run('UPDATE userOverride SET wiki=? WHERE userID=?', wiki, msg.author.id);
-					}
-				}).then(() => {
-					msg.reply(`your personal override wiki is now set to **${wikis[wiki].longname}**.`);
-				});
+				const uRow = db.prepare('SELECT * FROM userOverride WHERE userID=?').get(msg.author.id);
+				if (!uRow) {
+					db.prepare('INSERT INTO userOverride VALUES (?,?)').run(msg.author.id, wiki);
+				} else {
+					db.prepare('UPDATE userOverride SET wiki=? WHERE userID=?').run(wiki, msg.author.id);
+				}
+				msg.reply(`Your personal override wiki is now set to **${wikis[wiki].longname}**.`);
 			} else if (Object.keys(walias).includes(wiki)) {
-				sql.get('SELECT * FROM userOverride WHERE userID=?', msg.author.id).then(orow => {
-					if (!orow) {
-						return sql.run('INSERT INTO userOverride VALUES (?,?)', msg.author.id, walias[wiki].wiki);
-					} else {
-						return sql.run('UPDATE userOverride SET wiki=? WHERE userID=?', walias[wiki].wiki, msg.author.id);
-					}
-				}).then(() => {
-					msg.reply(`your personal override wiki is now set to **${wikis[walias[wiki].wiki].longname}**.`);
-				});
+				const uRow = db.prepare('SELECT * FROM userOverride WHERE userID=?').get(msg.author.id);
+				if (!uRow) {
+					db.prepare('INSERT INTO userOverride VALUES (?,?)').run(msg.author.id, walias[wiki].wiki);
+				} else {
+					db.prepare('UPDATE userOverride SET wiki=? WHERE userID=?').run(walias[wiki].wiki, msg.author.id);
+				}
+				msg.reply(`Your personal override wiki is now set to **${wikis[walias[wiki].wiki].longname}**.`);
+			} else if (wiki === 'default') {
+				db.prepare('DELETE FROM userOverride WHERE userID=?').run(msg.author.id);
+				msg.reply('You will now always use the default wiki of the channel you are talking in.');
 			} else {
 				invalidReply(bot, msg, true);
 			}
@@ -263,8 +254,8 @@ const commands = {
 };
 
 const invalidReply = (bot, msg, isNotList) => {
-	let replyString = 'here is a list of wikis you can set:';
-	if (isNotList) replyString = 'that\'s not a wiki I know of. Here\'s a list of wikis you can set:';
+	let replyString = 'Here is a list of wikis you can set:';
+	if (isNotList) replyString = 'That\'s not a wiki I know of. Here\'s a list of wikis you can set:';
 	for (let wiki in wikis) {
 		if (!wikis.hasOwnProperty(wiki)) continue;
 

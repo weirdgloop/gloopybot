@@ -1,14 +1,13 @@
 const needle = require('needle');
 const Discord = require('discord.js');
-const bot = new Discord.Client();
+const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.DIRECT_MESSAGES]});
 
 const config = require('./bits/config.json');
 const wikis = require('./bits/wikis.json');
 const aliases = require('./bits/aliases.json');
 const commands = require('./bits/commands.js');
 
-const sql = require('sqlite');
-sql.open('./bits/db.sqlite');
+const db = require('better-sqlite3')('./bits/db.sqlite');
 
 const pj = require('./package.json');
 
@@ -17,20 +16,17 @@ needle.defaults({
 });
 
 bot.once('ready', () => {
-	sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
-		return sql.run('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT)');
-	}).then(() => {
-		return sql.run('CREATE TABLE IF NOT EXISTS userOverride (userid TEXT, wiki TEXT)');
-	}).then(() => {
-		bot.guilds.cache.forEach(guild => {
-			sql.get('SELECT * FROM guilds WHERE id=?', guild.id).then(row => {
-				if (!row) {
-					sql.run('INSERT INTO guilds(id) VALUES (?)', guild.id);
-				}
-			})
-		});
+	db.prepare('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').run();
+	db.prepare('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT)').run();
+	db.prepare('CREATE TABLE IF NOT EXISTS userOverride (userid TEXT, wiki TEXT)').run();
+	bot.guilds.cache.forEach(guild => {
+		const gRow = db.prepare('SELECT * FROM guilds WHERE id=?').get(guild.id);
+		if (!gRow) {
+			db.prepare('INSERT INTO guilds(id) VALUES (?)').run(guild.id);
+		}
 	});
-	reallyReady();
+	bot.user.setActivity(`with gloop | ${config.prefix}help`);
+	console.log(`Ready: serving ${bot.guilds.cache.size} guilds.`);
 });
 
 bot.on('error', error => {
@@ -38,36 +34,32 @@ bot.on('error', error => {
 });
 
 bot.on('guildCreate', guild => {
-	sql.get(`SELECT * FROM guilds WHERE id=?`, guild.id).then(row => {
-		if (!row) {
-			sql.run('INSERT INTO guilds (id) VALUES (?)', [guild.id]);
+	try {
+		const gRow = db.prepare('SELECT * FROM guilds WHERE id=?').get(guild.id);
+		if (!gRow) {
+			db.prepare('INSERT INTO guilds(id) VALUES (?)').run(guild.id);
 		}
-	}).catch(() => {
-		sql.run('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').then(() => {
-			sql.run('INSERT INTO guilds (id) VALUES (?)', [guild.id]);
-		});
-	});
+	} catch(e) {
+		db.prepare('CREATE TABLE IF NOT EXISTS guilds (id TEXT, mainWiki TEXT)').run();
+		db.prepare('INSERT INTO guilds(id) VALUES (?)').run(guild.id);
+	}
 });
 
-const reallyReady = () => {
-	bot.user.setActivity(`with gloop | ${config.prefix}help`);
-	console.log(`Ready: serving ${bot.guilds.cache.size} guilds, in ${bot.channels.cache.size} channels, for ${bot.users.cache.size} users.`);
-};
-
-bot.on('message', msg => {
+bot.on('messageCreate', msg => {
 	if (msg.author.bot) return;
-	if (msg.channel.type == 'group' || msg.channel.type == 'category') return;
+	if (msg.channel.type == 'GROUP_DM' || msg.channel.type == 'GUILD_CATEGORY') return;
 
-	if (msg.channel.type == 'dm') {
-		sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id).then(() => {
-			init(msg, true);
-		}).catch(() => {
-			sql.run('CREATE TABLE IF NOT EXISTS dms (id TEXT, wiki TEXT)').then(() => {
-				return sql.get('SELECT * FROM dms WHERE id=?', msg.channel.id);
-			}).then(() => {
-				init(msg, true);
-			});
-		});
+	if (msg.channel.type == 'DM') {
+		try {
+			const dRow = db.prepare('SELECT * FROM dms WHERE id=?').get(msg.channel.id);
+			if (!dRow) {
+				db.prepare('INSERT INTO dms(id) VALUES (?)').run(msg.channel.id);
+			}
+		} catch(e) {
+			db.prepare('CREATE TABLE IF NOT EXISTS dms (id TEXT, wiki TEXT)').run();
+			db.prepare('INSERT INTO dms(id) VALUES (?)').run(guild.id);
+		}
+		init(msg, true);
 	} else {
 		init(msg, false);
 	}
@@ -81,19 +73,19 @@ const init = (msg, isDM) => {
 			if (commands.commands[cmd].level !== 0) {
 				if (commands.commands[cmd].level === 1) {
 					if (!authorIsAnyAdmin(msg, isDM)) {
-						msg.reply('you have to be a server administrator to do this.');
+						msg.reply('You have to be a server administrator to do this.');
 					} else {
-						commands.commands[cmd].process(bot, msg, args, isDM);
+						commands.commands[cmd].process(bot, msg, args, isDM, db);
 					}
 				} else {
 					if (!authorIsBotCreator(msg, isDM)) {
-						msg.reply('only the creator of the bot can do this.');
+						msg.reply('Only the creator of the bot can do this.');
 					} else {
-						commands.commands[cmd].process(bot, msg, args, isDM);
+						commands.commands[cmd].process(bot, msg, args, isDM, db);
 					}
 				}
 			} else {
-				commands.commands[cmd].process(bot, msg, args, isDM);
+				commands.commands[cmd].process(bot, msg, args, isDM, db);
 			}
 		} else {
 			parseLinks(msg, isDM);
@@ -106,7 +98,7 @@ const init = (msg, isDM) => {
 const authorIsServerAdmin = (msg, isDM) => {
 	if (isDM) return true;
 	if (msg.guild.id == config.testServer) return true;
-	return msg.member.hasPermission('ADMINISTRATOR');
+	return msg.member.permissions.has(Discord.Permissions.FLAGS.ADMINISTRATOR);
 };
 
 const authorIsBotCreator = (msg, isDM) => {
@@ -159,12 +151,9 @@ const parseLinks = (msg, isDM) => {
 			msg.channel.send(replString);
 		}).catch(err => {
 			if (err === 'NVL') {
-				msg.channel.send([
-					'**No search results found for the attempted link(s).**',
-					'Try using dashes instead to force-create a URL.'
-				]);
+				msg.channel.send('**No search results found for the attempted link(s).**\nTry using dashes instead to force-create a URL.');
 			} else if (err === 'NDW') {
-				msg.reply(`this server has no default wiki set. Please set one ${!isDM ? 'or have a server administrator set one ' : ''}using \`${config.prefix}wiki\`.`);
+				msg.reply(`This server has no default wiki set. Please set one ${!isDM ? 'or have a server administrator set one ' : ''}using \`${config.prefix}wiki\`.`);
 			} else if (err === 'ERO') {
 				()=>{}; //noop - if it's only empty rawlinks just ignore the entire message altogether
 			} else {
@@ -222,31 +211,27 @@ const getWiki = (objWiki, changuildID, isDM, user) => {
 	return new Promise((resolve, reject) => {
 		if (objWiki === 'default') {
 			if (isDM) {
-				sql.get('SELECT * FROM dms WHERE id=?', changuildID).then(row => {
-					if (!row || !row.wiki) {
+				const dRow = db.prepare('SELECT * FROM dms WHERE id=?').get(changuildID);
+				if (!dRow || !dRow.wiki) {
+					return reject('NDW');
+				}
+				return resolve(wikis[dRow.wiki].url);
+			} else {
+				const uRow = db.prepare('SELECT * FROM userOverride WHERE userID=?').get(user);
+				if (uRow && uRow.wiki) {
+					return resolve(wikis[uRow.wiki].url);
+				} else {
+					const gRow = db.prepare('SELECT * FROM guilds WHERE id=?').get(changuildID.split('@')[1]);
+					if (!gRow || !gRow.mainWiki) {
 						return reject('NDW');
 					}
-					return resolve(wikis[row.wiki].url);
-				})
-			} else {
-				sql.get('SELECT * FROM userOverride WHERE userID=?', user).then(urow => {
-					if (urow && urow.wiki) {
-						return resolve(wikis[urow.wiki].url);
+					const oRow = db.prepare('SELECT * FROM overrides WHERE guildID=? AND channelID=?').get(gRow.id, changuildID.split('@')[0]);
+					if (!oRow) {
+						return resolve(wikis[gRow.mainWiki].url);
 					} else {
-						sql.get('SELECT * FROM guilds WHERE id=?', changuildID.split('@')[1]).then(row => {
-							if (!row.mainWiki) {
-								return reject('NDW');
-							}
-							sql.get('SELECT * FROM overrides WHERE guildID=? AND channelID=?', row.id, changuildID.split('@')[0]).then(crow => {
-								if (!crow) {
-									return resolve(wikis[row.mainWiki].url);
-								} else {
-									return resolve(wikis[crow.wiki].url);
-								}
-							});
-						});
+						return resolve(wikis[oRow.wiki].url);
 					}
-				});
+				}
 			}
 		} else {
 			return resolve(wikis[objWiki].url);
