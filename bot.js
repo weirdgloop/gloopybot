@@ -248,7 +248,7 @@ const requestLink = (query, wiki, type, changuildID, isDM, user) => {
 	
 			if (type !== 'raw') {
 				if (wurl.includes('wikipedia')) wurl += '/w';
-				let url = `${wurl}/api.php?action=opensearch&search=${wikiUrlEncode(query)}&limit=1&redirects=resolve`;
+				let url = `${wurl}/api.php?action=opensearch&search=${wikiUrlEncode(query)}&redirects=resolve`;
 				needle('get', url).then(response => {
 					if (response.body[1].length === 0) {
 						return resolve(404);
