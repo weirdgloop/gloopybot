@@ -30,3 +30,5 @@ node_modules
 *.sqlite
 
 bits/config\.json
+deno/.env
+bits/data.db
