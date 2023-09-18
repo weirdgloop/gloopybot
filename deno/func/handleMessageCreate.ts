@@ -2,7 +2,7 @@ import { Harmony, SQLite } from '../deps.ts';
 import { ExtendedClient, commands } from './modules.ts'
 
 export const handleMessageCreate = (bot: ExtendedClient, message: Harmony.Message, db: SQLite.DB) => {
-    if (message.content.startsWith(bot.prefix!)) {
+    if (message.content.startsWith(bot.prefix)) {
         handleCommand(bot, message, db);
         return;
     }
@@ -17,7 +17,7 @@ const messageAuthorIsAdmin = (bot: ExtendedClient, message: Harmony.Message) => 
 }
 
 const handleCommand = (bot: ExtendedClient, message: Harmony.Message, db: SQLite.DB) => {
-    const [cmd, ...args] = message.content.replace(bot.prefix!, '').split(' ');
+    const [cmd, ...args] = message.content.replace(bot.prefix, '').split(' ');
     if (!commands[cmd]) {
         message.reply(`Command "${cmd}" not found!`);
         return;

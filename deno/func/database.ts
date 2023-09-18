@@ -34,3 +34,15 @@ export const getGuildChannelOverrides = (guildID: string, db: SQLite.DB) => {
 export const deleteChannelOverride = (guildID: string, channelID: string, db: SQLite.DB) => {
     db.query('DELETE FROM overrides WHERE guildID=? AND channelID=?', [guildID, channelID]);
 }
+
+export const setUserOverride = (userID: string, wikiKey: string, db: SQLite.DB) => {
+    db.query('INSERT INTO userOverride(userid,wiki) VALUES (?,?) ON CONFLICT (userid) SET wiki=excluded.wiki', [userID, wikiKey]);
+}
+
+export const getUserOverride = (userID: string, db: SQLite.DB) => {
+    return db.query<[string]>('SELECT wiki FROM userOverride WHERE userid=?', [userID])[0][0] || undefined;
+}
+
+export const deleteUserOverride = (userID: string, db: SQLite.DB) => {
+    db.query('DELETE FROM userOverride WHERE userid=?', [userID]);
+}

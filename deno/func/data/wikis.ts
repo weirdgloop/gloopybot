@@ -4,7 +4,7 @@ interface WikiDefinition {
     aliases: string[]
 }
 
-export const wikis : {[key: string]: WikiDefinition} = {
+export const wikis : Record<string, WikiDefinition> = {
     r: {
         url: "https://runescape.wiki",
         name: "RuneScape",

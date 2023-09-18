@@ -1,11 +1,10 @@
-import { Harmony, SQLite } from './deps.ts';
-import { load } from 'https://deno.land/std@0.197.0/dotenv/mod.ts';
+import { Harmony, SQLite, loadenv } from './deps.ts';
 import { handleMessageCreate, setupBotDatabase, ExtendedClient } from './func/modules.ts';
 
 const db = new SQLite.DB('../bits/data.db');
-const env = await load();
+const env = await loadenv();
 
-const bot = new ExtendedClient({
+const bot = new ExtendedClient(env['OWNER_ID'], env['PREFIX'], {
     intents: [
         Harmony.GatewayIntents.GUILDS,
         Harmony.GatewayIntents.DIRECT_MESSAGES,
@@ -13,12 +12,10 @@ const bot = new ExtendedClient({
         Harmony.GatewayIntents.MESSAGE_CONTENT
     ]
 });
-bot.owner = env['OWNER_ID'];
-bot.prefix = env['PREFIX'];
 
 bot.on('ready', async () => {
     setupBotDatabase(db);
-    bot.setPresence({type: 'PLAYING', name: `with gloop | ${bot.prefix}help`});
+    bot.setPresence({type: 'CUSTOM_STATUS', name: `Gloopin' around | ${bot.prefix}help`});
     console.log(`Ready with Deno! Serving ${await bot.guilds.size()} guilds.`);
 });
 
