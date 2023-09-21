@@ -21,9 +21,9 @@ export const makeLinks = async (bot: ExtendedClient, message: Harmony.Message, d
 
     const cleanedMessage = cleanMessageContent(message.content);
 
-    const searchQueries = [...cleanedMessage.matchAll(/\[\[(.*?)(?:\|.*?)?\]\]/g)].map(arr => arr[1]).map(x => {return {query: x, type: "search", wikiKey: wikiKey || ''} as WikiQuery});
-    const templateQueries = [...cleanedMessage.matchAll(/{{(.*?)(?:\|.*?)?}}/g)].map(arr => arr[1]).map(x => {return {query: x, type: "template", wikiKey: wikiKey || ''} as WikiQuery});
-    const hardLinkQueries = [...cleanedMessage.matchAll(/--(.*?)(?:\|.*?)?--/g)].map(arr => arr[1]).map(x => {return {query: x, type: "hardlink", wikiKey: wikiKey || ''} as WikiQuery});
+    const searchQueries = [...cleanedMessage.matchAll(/\[\[(.*?)(?:\|.*?)?\]\]/g)].map(arr => arr[1]).map(x => {return {query: x, type: "search", wikiKey: wikiKey || ''} as WikiQuery}).filter((value, index, array) => !array.filter((v, i) => JSON.stringify(value) == JSON.stringify(v) && i < index).length);
+    const templateQueries = [...cleanedMessage.matchAll(/{{(.*?)(?:\|.*?)?}}/g)].map(arr => arr[1]).map(x => {return {query: x, type: "template", wikiKey: wikiKey || ''} as WikiQuery}).filter((value, index, array) => !array.filter((v, i) => JSON.stringify(value) == JSON.stringify(v) && i < index).length);
+    const hardLinkQueries = [...cleanedMessage.matchAll(/--(.*?)(?:\|.*?)?--/g)].map(arr => arr[1]).map(x => {return {query: x, type: "hardlink", wikiKey: wikiKey || ''} as WikiQuery}).filter((value, index, array) => !array.filter((v, i) => JSON.stringify(value) == JSON.stringify(v) && i < index).length);
     if ((searchQueries.length > 0 || templateQueries.length > 0 || hardLinkQueries.length > 0) && !wikiKey) {
         message.reply(`GloopyBot has not yet been setup for this place. Check out the ${bot.prefix}help command for instructions to set the bot up, or ask an administrator in the server to do it for you.`);
         return;
@@ -34,7 +34,12 @@ export const makeLinks = async (bot: ExtendedClient, message: Harmony.Message, d
 
     if (apiLinks.length === 0 && hardLinks.length === 0) return;
 
-    message.channel.send(`**Wiki links found:**${apiLinks.length > 0 ? `\n${apiLinks}` : ''}\n${hardLinks}`);
+    const toSend = `**Wiki links found:**${apiLinks.length > 0 ? `\n${apiLinks}` : ''}\n${hardLinks}`;
+    if (toSend.length > 1900) {
+        message.reply('I have found some things, but the message is too long for me to send it. Try again using less links.');
+        return;
+    }
+    message.channel.send(toSend);
 }
 
 const cleanMessageContent = (content: string): string => {
