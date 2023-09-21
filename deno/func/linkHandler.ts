@@ -34,14 +34,14 @@ export const makeLinks = async (bot: ExtendedClient, message: Harmony.Message, d
 
     if (apiLinks.length === 0 && hardLinks.length === 0) return;
 
-    message.channel.send(`**Wiki links found:**\n${apiLinks}\n${hardLinks}`);
+    message.channel.send(`**Wiki links found:**${apiLinks.length > 0 ? `\n${apiLinks}` : ''}\n${hardLinks}`);
 }
 
 const cleanMessageContent = (content: string): string => {
     content = content.replace(/<!?@[0-9]+>/gm, ' '); //remove mentions
     content = content.replace(/`{3}(.|\n)+`{3}/gm, ' '); //remove multiline code blocks
     content = content.replace(/`+.*`+/gm, ' '); //remove inline code sections
-    content = content.replace(/<?https?:\/\/[\w.\/#?&_-]*>?\s/gm, ' '); //remove links
+    content = content.replace(/<?https?:\/\/[\w.\/#?&_=-]*>?/gm, ' '); //remove links
     return content;
 }
 
