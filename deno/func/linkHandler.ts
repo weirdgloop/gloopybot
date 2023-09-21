@@ -40,7 +40,7 @@ export const makeLinks = async (bot: ExtendedClient, message: Harmony.Message, d
 const cleanMessageContent = (content: string): string => {
     content = content.replace(/<!?@[0-9]+>/gm, ' '); //remove mentions
     content = content.replace(/`{3}(.|\n)+`{3}/gm, ''); //remove multiline code blocks
-    content = content.replace(/`+.*`+/gm, ''); //remove inline code sections
+    content = content.replace(/`+.*?`+/gm, ''); //remove inline code sections
     content = content.replace(/<?https?:\/\/[\w.\/#?&_=-]*>?/gm, ' '); //remove links
     return content;
 }
