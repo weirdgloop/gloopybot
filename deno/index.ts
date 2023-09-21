@@ -19,8 +19,8 @@ bot.on('ready', async () => {
     console.log(`Ready with Deno! Serving ${await bot.guilds.size()} guilds.`);
 });
 
-bot.on('messageCreate', (message) => {
-    handleMessageCreate(bot, message, db);
+bot.on('messageCreate', async (message) => {
+    await handleMessageCreate(bot, message, db);
 });
 
 bot.connect(env['DISCORD_TOKEN']);

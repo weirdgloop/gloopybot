@@ -2,7 +2,7 @@ import { SQLite } from '../deps.ts';
 
 export const setupBotDatabase = (db: SQLite.DB) => {
     db.query('CREATE TABLE IF NOT EXISTS guilds (id TEXT PRIMARY KEY, mainWiki TEXT)');
-	db.query('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT PRIMARY KEY, channelID TEXT PRIMARY KEY, wiki TEXT)');
+	db.query('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID, wiki TEXT, PRIMARY KEY (guildID, channelID))');
 	db.query('CREATE TABLE IF NOT EXISTS userOverride (userid TEXT PRIMARY KEY, wiki TEXT)');
     db.query('CREATE TABLE IF NOT EXISTS dms (id TEXT PRIMARY KEY, wiki TEXT)');
 }
@@ -12,7 +12,7 @@ export const setGuildWiki = (guildID: string, wikiKey: string, db: SQLite.DB) =>
 }
 
 export const getGuildWiki = (guildID: string, db: SQLite.DB) => {
-    return db.query<[string]>('SELECT mainWiki FROM guilds WHERE id=?', [guildID])[0][0] || undefined;
+    return db.query<[string]>('SELECT mainWiki FROM guilds WHERE id=?', [guildID])?.[0]?.[0] || undefined;
 }
 
 export const setDMWiki = (channelID: string, wikiKey: string, db: SQLite.DB) => {
@@ -20,11 +20,15 @@ export const setDMWiki = (channelID: string, wikiKey: string, db: SQLite.DB) => 
 }
 
 export const getDMWiki = (channelID: string, db: SQLite.DB) => {
-    return db.query<[string]>('SELECT wiki FROM dms WHERE id=?', [channelID])[0][0] || undefined;
+    return db.query<[string]>('SELECT wiki FROM dms WHERE id=?', [channelID])?.[0]?.[0] || undefined;
 }
 
 export const setChannelOverride = (guildID: string, channelID: string, wikiKey: string, db: SQLite.DB) => {
-    db.query('INSERT INTO overrides(guildID,channelID,wiki) VALUES (?,?,?) ON CONFLICT (guildID,channelID) SET wiki=excluded.wiki', [guildID, channelID, wikiKey]);
+    db.query('INSERT INTO overrides(guildID,channelID,wiki) VALUES (?,?,?) ON CONFLICT (guildID,channelID) DO UPDATE SET wiki=excluded.wiki', [guildID, channelID, wikiKey]);
+}
+
+export const getChannelOverride = (guildID: string, channelID: string, db: SQLite.DB) => {
+    return db.query<[string, string]>('SELECT wiki FROM overrides WHERE guildID=? AND channelID=?', [guildID, channelID])?.[0]?.[0] || undefined;
 }
 
 export const getGuildChannelOverrides = (guildID: string, db: SQLite.DB) => {
@@ -36,11 +40,11 @@ export const deleteChannelOverride = (guildID: string, channelID: string, db: SQ
 }
 
 export const setUserOverride = (userID: string, wikiKey: string, db: SQLite.DB) => {
-    db.query('INSERT INTO userOverride(userid,wiki) VALUES (?,?) ON CONFLICT (userid) SET wiki=excluded.wiki', [userID, wikiKey]);
+    db.query('INSERT INTO userOverride(userid,wiki) VALUES (?,?) ON CONFLICT (userid) DO UPDATE SET wiki=excluded.wiki', [userID, wikiKey]);
 }
 
 export const getUserOverride = (userID: string, db: SQLite.DB) => {
-    return db.query<[string]>('SELECT wiki FROM userOverride WHERE userid=?', [userID])[0][0] || undefined;
+    return db.query<[string]>('SELECT wiki FROM userOverride WHERE userid=?', [userID])?.[0]?.[0] || undefined;
 }
 
 export const deleteUserOverride = (userID: string, db: SQLite.DB) => {

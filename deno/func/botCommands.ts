@@ -1,7 +1,7 @@
 import { Harmony, SQLite, Table } from '../deps.ts';
-import { ExtendedClient } from './modules.ts';
+import { ExtendedClient, getWikiKeyForInput } from './modules.ts';
 import { wikis } from './data/wikis.ts';
-import * as query from './database.ts'; 
+import * as query from './database.ts';
 
 interface BotCommand {
     description: string,
@@ -28,7 +28,8 @@ export const commands: Record<string, BotCommand> = {
             ' default one for the channel.\n* For example, in a channel where the default is the RS3 wiki, <[[osrs:Bucket]]> links to the OSRS version of the page.\n\n' +
             'Privacy policy:\nThe privacy policy for GloopyBot can be found at <https://invalid.cards/gloopybot/>.';
             
-            message.reply('```\n' + table.render() + footer + '\n```');
+            message.reply('```\n' + table.render() + '\n```');
+            message.channel.send('```\n' + footer + '\n```');
         }
     },
     'wiki': {
@@ -44,7 +45,7 @@ export const commands: Record<string, BotCommand> = {
                 return;
             }
             
-            if (message.channel.isDM()) {
+            if (message.channel.isDM() || message.channel.isGroupDM()) {
                 query.setDMWiki(message.channelID, wikiKey, db);
                 message.reply(`The default wiki for this DM has been changed to **${wikis[wikiKey].name}**.`);
                 return;
@@ -57,7 +58,7 @@ export const commands: Record<string, BotCommand> = {
         description: 'Set the override wiki for the current channel.',
         restricted: true,
         execute(client, message, db, args) {
-            if (message.channel.isDM()) {
+            if (message.channel.isDM() || message.channel.isGroupDM()) {
                 message.reply('You can\'t use this command in DMs.');
                 return;
             }
@@ -79,7 +80,7 @@ export const commands: Record<string, BotCommand> = {
         }
     },
     'userwiki': {
-        description: 'Set your own personal override, prioritised over all other settings. Set to "default" to reset.',
+        description: 'Set your own personal override. Set to "default" to reset.',
         restricted: false,
         execute(client, message, db, args) {
             if (args[0] && args[0] === 'default') {
@@ -95,13 +96,13 @@ export const commands: Record<string, BotCommand> = {
         }
     },
     'config': {
-        description: 'Show the configuration of the current guild. Note that this may show channels that are not accessible to all users.',
+        description: 'Show the configuration of the current guild.',
         restricted: true,
         execute(_client, message, db) {
             const mainTable = new Table.default();
             mainTable.setHeading('Key', 'Value');
 
-            if (message.channel.isDM()) {
+            if (message.channel.isDM() || message.channel.isGroupDM()) {
                 mainTable.addRowMatrix([
                     ['Channel ID', message.channel.id],
                     ['Channel wiki', wikis[query.getDMWiki(message.channel.id, db) || ''].name || 'Not set']
@@ -156,14 +157,6 @@ export const commands: Record<string, BotCommand> = {
             message.reply('You can add the bot to your own server using the following link: <https://nvld.krd/gloopybot>');
         }
     }
-}
-
-const getWikiKeyForInput = (input: string) => {
-    if (Object.keys(wikis).includes(input)) return input;
-
-    Object.entries(wikis).forEach(entry => {
-        if (entry[1].aliases.includes(input.replaceAll('+', ''))) return entry[0];
-    });
 }
 
 const getWikiForArgZero = (client: ExtendedClient, message: Harmony.Message, argZero?: string): string => {

@@ -1,7 +1,9 @@
 interface WikiDefinition {
     url: string,
     name: string,
-    aliases: string[]
+    aliases: string[],
+    apiSubdomain?: string,
+    articleSubdomain?: string
 }
 
 export const wikis : Record<string, WikiDefinition> = {
@@ -33,6 +35,8 @@ export const wikis : Record<string, WikiDefinition> = {
     w: {
         url: "https://en.wikipedia.org",
         name: "Wikipedia (English)",
-        aliases: ["wp", "wikipedia", "enwp"]
+        aliases: ["wp", "wikipedia", "enwp"],
+        apiSubdomain: '/w',
+        articleSubdomain: '/wiki'
     }
 };
