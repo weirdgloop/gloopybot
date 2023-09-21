@@ -15,7 +15,7 @@ const bot = new ExtendedClient(env['OWNER_ID'], env['PREFIX'], {
 
 bot.on('ready', async () => {
     setupBotDatabase(db);
-    bot.setPresence({type: 'CUSTOM_STATUS', name: `Gloopin' around | ${bot.prefix}help`});
+    bot.setPresence({type: 'PLAYING', name: `with gloop | ${bot.prefix}help`});
     console.log(`Ready with Deno! Serving ${await bot.guilds.size()} guilds.`);
 });
 
