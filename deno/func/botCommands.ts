@@ -112,13 +112,12 @@ export const commands: Record<string, BotCommand> = {
             }
             
             if (message.guildID) {
-                mainTable.addRowMatrix([
-                    ['Guild ID', message.guildID],
-                    ['Guild wiki', wikis[query.getGuildWiki(message.guildID, db) || ''].name || 'Not set']
-                ]);
-                const overrideTable = new Table.default().setHeading('Channel name', 'Override');
-                overrideTable.addRowMatrix(query.getGuildChannelOverrides(message.guildID, db));
-                message.reply('```\n' + mainTable.render() + '\n\n' + overrideTable.render() + '\n```');
+                let ret = `Guild wiki: ${wikis[query.getGuildWiki(message.guildID, db) || ''].name || 'Not set'}\n\nChannel overrides:`;
+                const matrix = query.getGuildChannelOverrides(message.guildID, db).map(x => {return [x[0], wikis[x[1]].name]});
+                for (const row of matrix) {
+                    ret += `\n- <#${row[0]}>: ${row[1]}`;
+                }
+                message.reply(ret);
                 return;
             }
                 
@@ -167,7 +166,7 @@ const getWikiForArgZero = (client: ExtendedClient, message: Harmony.Message, arg
 
     const wikiKey = getWikiKeyForInput(argZero);
     if (!wikiKey) {
-        message.reply(`The wiki ${argZero} was not found. Please use the \`${client.prefix}list\` command to view which wikis are valid for this command.`);
+        message.reply(`That wiki is not in my database. Please use the \`${client.prefix}list\` command to view which wikis are valid for this command.`, {allowedMentions: {}});
         return '';
     }
 
