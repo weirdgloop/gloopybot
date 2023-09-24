@@ -11,6 +11,11 @@ interface WikiQuery {
     wikiKey: string
 }
 
+interface WikiParseOutput {
+    wikiKey: string,
+    fixedQuery: string
+}
+
 export const makeLinks = async (bot: ExtendedClient, message: Harmony.Message, db: SQLite.DB) => {
     let wikiKey = queries.getUserOverride(message.author.id, db);
     if (message.channel.isDM() || message.channel.isGroupDM()) {
@@ -50,18 +55,21 @@ const cleanMessageContent = (content: string): string => {
     return content;
 }
 
-const parseWikiFromQuery = (query: WikiQuery) => {
-    if (!query) return '';
-    if (!query.query) return '';
+const parseWikiFromQuery = (query: WikiQuery): WikiParseOutput => {
+    if (!query) return {wikiKey: '', fixedQuery: ''};
+    if (!query.query) return {wikiKey: '', fixedQuery: ''};
 
-    if (!/^.*?:/g.test(query.query)) return query.wikiKey;
+    if (!/^.*?:/g.test(query.query)) return {wikiKey: query.wikiKey, fixedQuery: query.query};
 
     const matches = query.query.match(/^.*?:/g);
-    if (!matches) return query.wikiKey;
+    if (!matches) return {wikiKey: query.wikiKey, fixedQuery: query.query};
     const potentialWiki = matches[0].replace(':', '').toLowerCase();
-    const newKey = getWikiKeyForInput(potentialWiki);
-    if (!newKey) return query.wikiKey;
-    return newKey;
+    const newKey = getWikiKeyForInput(potentialWiki, false);
+    if (!newKey) return {wikiKey: query.wikiKey, fixedQuery: query.query};
+    return {
+        wikiKey: newKey,
+        fixedQuery: query.query.replaceAll(matches[0], '')
+    };
 }
 
 const handleAPIQueries = async (queries: WikiQuery[]): Promise<string> => {
@@ -70,13 +78,11 @@ const handleAPIQueries = async (queries: WikiQuery[]): Promise<string> => {
         let search = query.query;
         if (query.type === 'template') search = `Template:${search}`;
 
-        const actualWikiKey = parseWikiFromQuery(query);
-        const wiki = wikis[actualWikiKey];
+        const actualWikiData = parseWikiFromQuery(query);
+        const wiki = wikis[actualWikiData.wikiKey];
         if (!wiki) continue;
 
-        if (actualWikiKey !== query.wikiKey) {
-            search = search.split(':').slice(1).join(':');
-        }
+        search = actualWikiData.fixedQuery;
 
         let wikiUrl = wiki.url;
         if (wiki.apiSubdomain) wikiUrl += wiki.apiSubdomain;
@@ -94,16 +100,15 @@ const handleAPIQueries = async (queries: WikiQuery[]): Promise<string> => {
 const handleHardlinkQueries = (queries: WikiQuery[]): string => {
     let returnString = '';
     for (const query of queries) {
-        const actualWikiKey = parseWikiFromQuery(query);
-        const wiki = wikis[actualWikiKey];
+        let search = query.query;
+        const actualWikiData = parseWikiFromQuery(query);
+        const wiki = wikis[actualWikiData.wikiKey];
         if (!wiki) continue;
 
-        if (actualWikiKey !== query.wikiKey) {
-            query.query = query.query.split(':').slice(1).join(':');
-        }
+        search = actualWikiData.fixedQuery;
 
         const wikiUrl = `${wiki.url}${wiki.articleSubdomain ? wiki.articleSubdomain : '/w'}`;
-        returnString += `\n<${wikiUrl}/${fixDiscordLink(wikiUrlEncode(query.query))}>`;
+        returnString += `\n<${wikiUrl}/${fixDiscordLink(wikiUrlEncode(search))}>`;
     }
     return returnString.trim();
 }

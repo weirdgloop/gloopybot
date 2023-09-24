@@ -1,7 +1,7 @@
 import { Harmony, SQLite, loadenv } from './deps.ts';
 import { handleMessageCreate, setupBotDatabase, ExtendedClient } from './func/modules.ts';
 
-const db = new SQLite.DB('../bits/data.db');
+const db = new SQLite.DB('./data.db');
 const env = await loadenv();
 
 const bot = new ExtendedClient(env['OWNER_ID'], env['PREFIX'], {

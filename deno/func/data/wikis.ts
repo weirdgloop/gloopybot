@@ -32,6 +32,11 @@ export const wikis : Record<string, WikiDefinition> = {
         name: "Weird Gloop Meta",
         aliases: ["meta", "g", "gloop", "weirdgloop"]
     },
+    mc: {
+        url: "https://minecraft.wiki",
+        name: "Minecraft Wiki",
+        aliases: ["+mcw", "minecraft"]
+    },
     w: {
         url: "https://en.wikipedia.org",
         name: "Wikipedia (English)",
@@ -39,4 +44,5 @@ export const wikis : Record<string, WikiDefinition> = {
         apiSubdomain: '/w',
         articleSubdomain: '/wiki'
     }
+    
 };

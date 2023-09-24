@@ -112,7 +112,7 @@ export const commands: Record<string, BotCommand> = {
             }
             
             if (message.guildID) {
-                let ret = `Guild wiki: ${wikis[query.getGuildWiki(message.guildID, db) || ''].name || 'Not set'}\n\nChannel overrides:`;
+                let ret = `Guild wiki: ${wikis[query.getGuildWiki(message.guildID, db) || '']?.name || 'Not set'}\n\nChannel overrides:`;
                 const matrix = query.getGuildChannelOverrides(message.guildID, db).map(x => {return [x[0], wikis[x[1]].name]});
                 for (const row of matrix) {
                     ret += `\n- <#${row[0]}>: ${row[1]}`;
@@ -155,6 +155,20 @@ export const commands: Record<string, BotCommand> = {
         execute(_client, message) {
             message.reply('You can add the bot to your own server using the following link: <https://nvld.krd/gloopybot>');
         }
+    },
+    'migrate': {
+        description: 'Migrate the database to the new schema.',
+        restricted: true,
+        excludeFromHelp: true,
+        execute(client, message, db) {
+            if (message.author.id !== client.owner) {
+                message.reply('Nothing interesting happens.');
+                return;
+            }
+
+            query.migrateData(db);
+            message.reply('Done!');
+        }
     }
 }
 
@@ -164,7 +178,7 @@ const getWikiForArgZero = (client: ExtendedClient, message: Harmony.Message, arg
         return '';
     }
 
-    const wikiKey = getWikiKeyForInput(argZero);
+    const wikiKey = getWikiKeyForInput(argZero, true);
     if (!wikiKey) {
         message.reply(`That wiki is not in my database. Please use the \`${client.prefix}list\` command to view which wikis are valid for this command.`, {allowedMentions: {}});
         return '';

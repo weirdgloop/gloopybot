@@ -2,9 +2,34 @@ import { SQLite } from '../deps.ts';
 
 export const setupBotDatabase = (db: SQLite.DB) => {
     db.query('CREATE TABLE IF NOT EXISTS guilds (id TEXT PRIMARY KEY, mainWiki TEXT)');
-	db.query('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID, wiki TEXT, PRIMARY KEY (guildID, channelID))');
+	db.query('CREATE TABLE IF NOT EXISTS overrides (guildID TEXT, channelID TEXT, wiki TEXT, PRIMARY KEY (guildID, channelID))');
 	db.query('CREATE TABLE IF NOT EXISTS userOverride (userid TEXT PRIMARY KEY, wiki TEXT)');
     db.query('CREATE TABLE IF NOT EXISTS dms (id TEXT PRIMARY KEY, wiki TEXT)');
+}
+
+export const migrateData = (db: SQLite.DB) => {
+    db.execute(`
+        PRAGMA foreign_keys=off;
+        BEGIN TRANSACTION;
+
+        ALTER TABLE guilds RENAME TO old_guilds;
+        ALTER TABLE overrides RENAME TO old_overrides;
+        ALTER TABLE userOverride RENAME TO old_userOverride;
+        ALTER TABLE dms RENAME TO old_dms;
+
+        CREATE TABLE guilds (id TEXT PRIMARY KEY, mainWiki TEXT);
+        CREATE TABLE overrides (guildID TEXT, channelID TEXT, wiki TEXT, PRIMARY KEY (guildID,channelID));
+        CREATE TABLE userOverride (userid TEXT PRIMARY KEY, wiki TEXT);
+        CREATE TABLE dms (id TEXT PRIMARY KEY, wiki TEXT);
+
+        INSERT INTO guilds SELECT * FROM old_guilds;
+        INSERT INTO overrides SELECT * FROM old_overrides;
+        INSERT INTO userOverride SELECT * FROM old_userOverride;
+        INSERT INTO dms SELECT * FROM old_dms;
+
+        COMMIT;
+        PRAGMA foreign_keys=on;
+    `);
 }
 
 export const setGuildWiki = (guildID: string, wikiKey: string, db: SQLite.DB) => {
