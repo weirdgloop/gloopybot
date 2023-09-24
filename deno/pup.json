@@ -1,0 +1,10 @@
+{
+    "processes": [
+        {
+            "id": "gloopy",
+            "cmd": "deno run --allow-all index.ts",
+            "autostart": true
+        }
+    ]
+}
+  
