@@ -3,7 +3,8 @@
         {
             "id": "gloopy",
             "cmd": "deno run --allow-all index.ts",
-            "autostart": true
+            "autostart": true,
+            "restart": "error"
         }
     ]
 }
