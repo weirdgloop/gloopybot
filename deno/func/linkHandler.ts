@@ -76,13 +76,14 @@ const handleAPIQueries = async (queries: WikiQuery[]): Promise<string> => {
     let returnString = '';
     for (const query of queries) {
         let search = query.query;
-        if (query.type === 'template') search = `Template:${search}`;
 
         const actualWikiData = parseWikiFromQuery(query);
         const wiki = wikis[actualWikiData.wikiKey];
         if (!wiki) continue;
 
         search = actualWikiData.fixedQuery;
+
+        if (query.type === 'template') search = `Template:${search}`;
 
         let wikiUrl = wiki.url;
         if (wiki.apiSubdomain) wikiUrl += wiki.apiSubdomain;
