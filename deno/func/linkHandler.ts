@@ -68,7 +68,7 @@ const parseWikiFromQuery = (query: WikiQuery): WikiParseOutput => {
     if (!newKey) return {wikiKey: query.wikiKey, fixedQuery: query.query};
     return {
         wikiKey: newKey,
-        fixedQuery: query.query.replaceAll(matches[0], '')
+        fixedQuery: query.query.replace(matches[0], '')
     };
 }
 
