@@ -53,6 +53,7 @@ const botHasSendMessagePerms = async (message: Harmony.Message) => {
 
 const memberHasRoleWithAdmin = async (member?: Harmony.Member) => {
     if (!member) return false;
+    if (member.guild.ownerID === member.id) return true;
 
     let found = false;
     const roles = await member.roles.array();
