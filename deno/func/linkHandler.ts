@@ -52,6 +52,7 @@ const cleanMessageContent = (content: string): string => {
     content = content.replace(/`{3}(.|\n)+?`{3}/gm, ''); //remove multiline code blocks
     content = content.replace(/`+.*?`+/gm, ''); //remove inline code sections
     content = content.replace(/<?https?:\/\/[\w.\/#?&_=-]*>?/gm, ' '); //remove links
+    content = content.replace(/(\p{Cf}|\p{Cc})/gum, ''); //remove Unicode control and format characters
     return content;
 }
 
