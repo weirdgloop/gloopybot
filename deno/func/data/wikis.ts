@@ -35,7 +35,7 @@ export const wikis : Record<string, WikiDefinition> = {
     b: {
         url: "https://brightershoreswiki.org",
         name: "Brighter Shores",
-        aliases: ["bs", "shores"]
+        aliases: ["+bs", "shores"]
     },
     mc: {
         url: "https://minecraft.wiki",
