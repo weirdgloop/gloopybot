@@ -27,6 +27,11 @@ export const wikis : Record<string, WikiDefinition> = {
         name: "RuneScape Classic",
         aliases: ["rscw", "classic", "rsc"]
     },
+    d: {
+        url: "https://dragonwilds.runescape.wiki",
+        name: "RuneScape: Dragonwilds",
+        aliases: ["dw", "rsdw"]
+    },
     m: {
         url: "https://meta.weirdgloop.org",
         name: "Weird Gloop Meta",
