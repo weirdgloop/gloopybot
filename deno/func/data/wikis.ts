@@ -39,7 +39,7 @@ export const wikis : Record<string, WikiDefinition> = {
     },
     g: {
         url: "https://meta.weirdgloop.org",
-        name: "RuneScape Wiki Meta",
+        name: "Weird Gloop Meta",
         aliases: ["metawg", "gloop", "weirdgloop"]
     },
     b: {
