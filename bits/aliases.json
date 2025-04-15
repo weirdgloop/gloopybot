@@ -79,28 +79,16 @@
 		"wiki": "m",
 		"setOnly": false
 	},
-	"rsmeta": {
-		"wiki": "m",
-		"setOnly": false
-	},
-	"metars": {
-		"wiki": "m",
-		"setOnly": false
-	},
-	"metawg": {
-		"wiki": "g",
-		"setOnly": false
-	},
 	"g": {
-		"wiki": "g",
+		"wiki": "m",
 		"setOnly": false
 	},
 	"gloop": {
-		"wiki": "g",
+		"wiki": "m",
 		"setOnly": false
 	},
 	"weirdgloop": {
-		"wiki": "g",
+		"wiki": "m",
 		"setOnly": false
 	},
 	"wp": {

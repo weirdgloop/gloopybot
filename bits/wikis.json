@@ -16,12 +16,8 @@
 		"longname": "RuneScape Classic"
 	},
 	"m": {
-		"url": "https://meta.runescape.wiki",
-		"longname": "RuneScape Meta"
-	},
-	"g": {
 		"url": "https://meta.weirdgloop.org",
-		"longname": "WeirdGloop Meta"
+		"longname": "Meta"
 	},
 	"w": {
 		"url": "https://en.wikipedia.org",
