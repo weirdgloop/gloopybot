@@ -52,7 +52,7 @@ export const wikis : Record<string, WikiDefinition> = {
         name: "Minecraft Wiki",
         aliases: ["+mcw", "minecraft"]
     },
-    lol: {
+    l: {
         url: "https://wiki.leagueoflegends.com/en-us",
         name: "League of Legends Wiki (en-US)",
         aliases: ["lol", "league"]
