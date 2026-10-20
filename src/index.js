@@ -125,7 +125,7 @@ client.on(Events.MessageCreate, async (message) => {
   const isDirectMessage = !message.guildId;
   const mentionsBot = message.mentions.users.has(client.user.id);
   const migrationWarning = !isDirectMessage && !mentionsBot
-    ? '\n\n> ⚠️ Due to Discord permission changes, linking will work differently from 1 January 2027. Use `/migration` for details.'
+    ? '\n> ⚠️ Linking will change from 1 January 2027. Use `/migration` for details.'
     : '';
 
   const result = await lookupMessageContent(message.content, {
