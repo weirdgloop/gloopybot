@@ -94,6 +94,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // Preserve legacy link scanning during the transition and redirect old text commands to slash commands.
 client.on(Events.MessageCreate, async (message) => {
+  if (!message.content.trim()) return; // Always ignore empty first; this will be most common when Message Content intent is removed
   if (message.author.bot || !client.user) return;
 
   const onlyBotMention = message.mentions.users.has(client.user.id)
@@ -107,8 +108,6 @@ client.on(Events.MessageCreate, async (message) => {
     });
     return;
   }
-
-  if (!message.content.trim()) return;
 
   const legacyCommandReply = getLegacyCommandReply(message.content);
   if (legacyCommandReply !== undefined) {
