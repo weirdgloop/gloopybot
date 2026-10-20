@@ -94,6 +94,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // Preserve legacy link scanning during the transition and redirect old text commands to slash commands.
 client.on(Events.MessageCreate, async (message) => {
+  if (!message.content.trim()) return;
   if (message.author.bot || !client.user) return;
 
   const legacyCommandReply = getLegacyCommandReply(message.content);
