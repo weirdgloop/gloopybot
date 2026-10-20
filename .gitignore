@@ -34,3 +34,4 @@ deno/.env
 .env
 bits/data.db
 deno/data.db
+data/data.db

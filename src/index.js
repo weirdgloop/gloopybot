@@ -94,8 +94,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // Preserve legacy link scanning during the transition and redirect old text commands to slash commands.
 client.on(Events.MessageCreate, async (message) => {
-  if (!message.content.trim()) return;
   if (message.author.bot || !client.user) return;
+
+  const onlyBotMention = message.mentions.users.has(client.user.id)
+    && message.content.replace(new RegExp(`<@!?${client.user.id}>`, 'g'), '').trim() === '';
+  if (message.reference?.messageId && onlyBotMention) {
+    await message.reply({
+      content: 'I can\'t see the content of the message you replied to. Right-click that original message and choose **Apps → GloopyBot → Find wiki links** to have it parsed.',
+      allowedMentions: { parse: [] }
+    }).catch((error) => {
+      console.error('Could not send referenced-message guidance:', error);
+    });
+    return;
+  }
+
+  if (!message.content.trim()) return;
 
   const legacyCommandReply = getLegacyCommandReply(message.content);
   if (legacyCommandReply !== undefined) {
