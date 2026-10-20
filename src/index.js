@@ -132,7 +132,7 @@ client.on(Events.MessageCreate, async (message) => {
     userId: message.author.id,
     guildId: message.guildId ?? undefined,
     channelId: message.channelId,
-    migrationWarning
+    migrationWarning: ''
   });
 
   if (result.status === 'links' || result.status === 'too-long' || result.status === 'not-configured' || result.status === 'error' || (result.status === 'no-results' && result.limited)) {
