@@ -19,8 +19,8 @@ function cleanMessageContent(content) {
     .replace(/<!?@!?[0-9]+>/g, ' ')
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]*`/g, '')
-    .replace(/<?https?:\/\/[^\s<>]*>?/g, ' ')
-    .replace(/[\p{Cc}\p{Cf}]/gu, '');
+    .replace(/<?(?:[a-z][a-z\d+.-]*:\/\/|\/\/|www\.)[^\s<>]*>?/gi, ' ')
+    .replace(/[\p{Cc}\p{Cf}]/gu, (character) => /[\r\n\u0085]/u.test(character) ? character : '');
 }
 
 /** Extract and de-duplicate normal, template, and raw queries in their original message order. */
@@ -28,9 +28,9 @@ function extractWikiQueries(content) {
   const cleaned = cleanMessageContent(content);
   const queries = [];
   const patterns = [
-    { regex: /\[\[(.*?)(?:\|.*?)?\]\]/g, type: 'search' },
-    { regex: /{{(.*?)(?:\|.*?)?}}/g, type: 'template' },
-    { regex: /--(.*?)(?:\|.*?)?--/g, type: 'raw' }
+    { regex: /\[\[([^\r\n\u0085\u2028\u2029]*?)(?:\|[^\r\n\u0085\u2028\u2029]*?)?\]\]/g, type: 'search' },
+    { regex: /{{([^\r\n\u0085\u2028\u2029]*?)(?:\|[^\r\n\u0085\u2028\u2029]*?)?}}/g, type: 'template' },
+    { regex: /--([^\r\n\u0085\u2028\u2029]*?)(?:\|[^\r\n\u0085\u2028\u2029]*?)?--/g, type: 'raw' }
   ];
 
   for (const { regex, type } of patterns) {
