@@ -18,7 +18,6 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    // Transitional: remove this intent when automatic server-message scanning ends.
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.DirectMessages
   ],
@@ -92,9 +91,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-// Preserve legacy link scanning during the transition and redirect old text commands to slash commands.
+// Scan messages for wiki links and redirect old text commands to slash commands.
 client.on(Events.MessageCreate, async (message) => {
-  if (!message.content.trim()) return; // Always ignore empty first; this will be most common when Message Content intent is removed
+  if (!message.content.trim()) return;
   if (message.author.bot || !client.user) return;
 
   const onlyBotMention = message.mentions.users.has(client.user.id)
@@ -122,17 +121,10 @@ client.on(Events.MessageCreate, async (message) => {
     return;
   }
 
-  const isDirectMessage = !message.guildId;
-  const mentionsBot = message.mentions.users.has(client.user.id);
-  const migrationWarning = !isDirectMessage && !mentionsBot
-    ? '\n> ⚠️ Linking will change from 1 January 2027. Use `/migration` for details.'
-    : '';
-
   const result = await lookupMessageContent(message.content, {
     userId: message.author.id,
     guildId: message.guildId ?? undefined,
-    channelId: message.channelId,
-    migrationWarning: ''
+    channelId: message.channelId
   });
 
   if (result.status === 'links' || result.status === 'too-long' || result.status === 'not-configured' || result.status === 'error' || (result.status === 'no-results' && result.limited)) {
@@ -142,7 +134,7 @@ client.on(Events.MessageCreate, async (message) => {
   }
 });
 
-/** Return migration guidance for a recognized `g!` command; an empty string means silently ignore it. */
+/** Return slash-command guidance for a recognized `g!` command; an empty string means silently ignore it. */
 function getLegacyCommandReply(content) {
   const [command] = content.trim().split(/\s+/, 1);
   const legacyCommand = command?.startsWith('g!')

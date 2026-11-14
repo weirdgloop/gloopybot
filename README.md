@@ -16,7 +16,6 @@ stores wiki settings in SQLite.
   change the selected wiki.
 - `/setwiki` sets or clears a wiki at the Server, Channel, or User scope. In a
   DM, choose Channel to set or clear that conversation's default.
-- `/migration` explains the planned change to how the bot finds links.
 - `/ping` checks that the bot is responding.
 - Right-click a message and choose **Apps → GloopyBot → Find wiki links** to
   have the bot look up its wiki markup and post the results in the channel.
@@ -37,17 +36,9 @@ own personal wiki. In DMs, anyone can set the DM channel wiki.
 
 ## Discord message access
 
-The bot currently checks messages for wiki markup, even when it is not
+The bot checks messages for wiki markup, even when it is not
 mentioned. This behavior requires the privileged **Message Content Intent** to
-be enabled for the application in the Discord Developer Portal. The current
-implementation requests that intent to preserve automatic linking during the
-transition.
-
-> [!WARNING]
-> ⚠️ Starting 1 January 2027, the planned change is for server messages to be
-> checked only when the bot is mentioned or a user explicitly selects **Find wiki links**.
-`/wiki` remains available. Direct messages are not affected. Run `/migration` for
-the user-facing explanation.
+be enabled for the application in the Discord Developer Portal.
 
 ## Requirements
 
@@ -78,4 +69,4 @@ where you have previously registered test commands.
 When installing the app, enable the `bot` and `applications.commands` OAuth
 scopes. Give the bot access to the channels where it should work, with permission
 to view channels, send messages, and embed links. Enable Message Content Intent
-in the Developer Portal while automatic message scanning is in use.
+in the Developer Portal.

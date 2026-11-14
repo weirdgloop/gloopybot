@@ -2,13 +2,12 @@
 
 const ping = require('./ping');
 const help = require('./help');
-const migration = require('./migration');
 const wiki = require('./wiki');
 const setWiki = require('./setwiki');
 const findWikiLinks = require('./find-wiki-links');
 
 // Keep registration lists and runtime lookup maps together so both use the same command set.
-const commands = [ping, help, migration, wiki, setWiki];
+const commands = [ping, help, wiki, setWiki];
 const messageCommands = [findWikiLinks];
 
 module.exports = {

@@ -156,7 +156,7 @@ module.exports = {
         .addFields(
           {
             name: 'Find links',
-            value: '• Mention GloopyBot with `[[page]]`, `{{template}}`, or `--page--`.\n• Right-click a message → **Apps → GloopyBot → Find wiki links**.',
+            value: '• Post `[[page]]`, `{{template}}`, or `--page--` in a message.\n• Right-click a message → **Apps → GloopyBot → Find wiki links**.',
             inline: false
           },
           {
@@ -172,11 +172,6 @@ module.exports = {
           {
             name: 'Which wiki is used?',
             value: 'Your personal setting takes priority, then the channel setting, then the server setting. In DMs, the channel setting applies.',
-            inline: false
-          },
-          {
-            name: 'Upcoming change',
-            value: '> ⚠️ Due to Discord permission changes, linking will work differently from 1 January 2027. Run `/migration` for details.',
             inline: false
           }
         )],

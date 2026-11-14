@@ -127,8 +127,8 @@ function notConfiguredResult(context) {
 }
 
 /** Format lookup URLs for Discord and enforce the response-size limit. */
-function makeLinksMessage(urls, migrationWarning = '', lookupLimitNotice = '') {
-  const content = `**Wiki links found:**\n${urls.map((url) => `<${url}>`).join('\n')}${migrationWarning}${lookupLimitNotice}`;
+function makeLinksMessage(urls, lookupLimitNotice = '') {
+  const content = `**Wiki links found:**\n${urls.map((url) => `<${url}>`).join('\n')}${lookupLimitNotice}`;
   if (content.length > 1900) {
     return { status: 'too-long', content: 'I found wiki links, but the result is too long to send. Try fewer links.' };
   }
@@ -159,7 +159,7 @@ async function lookupQueries(queries, context) {
   }
 
   if (urls.length === 0) return { status: 'no-results' };
-  return makeLinksMessage(urls, context.migrationWarning, context.lookupLimitNotice);
+  return makeLinksMessage(urls, context.lookupLimitNotice);
 }
 
 /** Look up at most ten distinct wiki links from a message and report when later links were skipped. */
